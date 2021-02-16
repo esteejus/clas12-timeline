@@ -1,5 +1,5 @@
 # clasqa
-Data monitoring tools for CLAS run QA
+Data monitoring tools for CLAS Quality Assurance (QA)
 
 * Tracks the electron trigger count, normalized by the Faraday cup charge
 * Also implements helicity monitoring, by tracking inclusive beam spin asymmetries
