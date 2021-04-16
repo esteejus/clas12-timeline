@@ -18,6 +18,9 @@ class Tools {
     "SectorLoss: N/F diminished within a sector for several consecutive files",
     "LowLiveTime: live time < 0.9",
     "Misc: miscellaneous defect, documented as comment"
+    "TotalOutlierFT: outlier N/F, but not terminal, marginal, or sector loss, FT electron",
+    "TerminalOutlierFT: outlier N/F of first or last file of run, not margina, FT electron",
+    "MarginalOutlierFT: marginal outlier N/F, within one stddev of cut line, FT electron"
   ]
 
   // list of bit names and descriptions

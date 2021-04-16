@@ -170,7 +170,7 @@ sectors.each { s ->
     cutLo = lq - cutFactor * iqr // lower QA cut boundary
     cutHi = uq + cutFactor * iqr // upper QA cut boundary
 
-    if(useFT) cutLo = lq - 2 * cutFactor * iqr // override FT low cut to be lower
+    if(useFT) cutLo = lq - 1 * cutFactor * iqr // override FT low cut to be lower
     
     cutTree[sectorIt][epochIt]['mq'] = mq
     cutTree[sectorIt][epochIt]['lq'] = lq
@@ -520,13 +520,19 @@ inList.each { obj ->
           // set outlier bit
           if( NF<cutLo || NF>cutHi ) {
             if( NFerrH>cutLo && NFerrL<cutHi ) {
-              defectList.add(T.bit("MarginalOutlier"))
+              if(!useFT)defectList.add(T.bit("MarginalOutlier"))
+              if(useFT) defectList.add(T.bit("MarginalOutlierFT"))
+
             } else if( i==0 || i+1==grA.getDataSize(0) ) {
-              defectList.add(T.bit("TerminalOutlier"))
+              if(!useFT)defectList.add(T.bit("TerminalOutlier"))
+              if(useFT)defectList.add(T.bit("TerminalOutlierFT"))
             } else {
-              defectList.add(T.bit("TotalOutlier"))
+              if(!useFT)defectList.add(T.bit("TotalOutlier"))
+              if(useFT)defectList.add(T.bit("TotalOutlierFT"))
             }
           }
+
+
           // set FC bit
           if( LT<0.9 ) defectList.add(T.bit("LowLiveTime"))
 
