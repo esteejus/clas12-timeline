@@ -68,33 +68,10 @@ qaTreeFD.each{ runnum, fileTree ->
       meldList = []
 
       // meld FD defect bits
-      defectListFD.each{ defect ->
-        if(defect==T.bit("TotalOutlier")) meldList << defect
-        if(defect==T.bit("TerminalOutlier")) meldList << defect
-        if(defect==T.bit("MarginalOutlier")) meldList << defect
-        if(defect==T.bit("TotalOutlierFT")) meldList << defect
-        if(defect==T.bit("TerminalOutlierFT")) meldList << defect
-        if(defect==T.bit("MarginalOutlierFT")) meldList << defect
-
-        if(defect==T.bit("LowLiveTime")) meldList << defect
-      }
 meldList+=defectListFD
       // meld FT defect bits
       if(fileQAFT!=null) {
         defectListFT = T.getLeaf(fileQAFT,['sectorDefects',sector])
-        defectListFT.each{ defect ->
-          
-        
-           if(defect==T.bit("TotalOutlier")) meldList << defect
-        if(defect==T.bit("TerminalOutlier")) meldList << defect
-        if(defect==T.bit("MarginalOutlier")) meldList << defect
-        if(defect==T.bit("TotalOutlierFT")) meldList << defect
-        if(defect==T.bit("TerminalOutlierFT")) meldList << defect
-        if(defect==T.bit("MarginalOutlierFT")) meldList << defect
-
-        if(defect==T.bit("LowLiveTime")) meldList << defect
-
-        }
       }
 meldList+=defectListFT
 meldList.unique()
