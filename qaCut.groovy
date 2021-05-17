@@ -531,8 +531,6 @@ inList.each { obj ->
               if(useFT)defectList.add(T.bit("TotalOutlierFT"))
             }
           }
-
-
           // set FC bit
           if( LT<0.9 ) defectList.add(T.bit("LowLiveTime"))
 
