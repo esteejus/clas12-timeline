@@ -31,7 +31,6 @@ exe run-groovy $CLASQA_JAVA_OPTS qaCut.groovy $dataset
 # FT electrons
 exe run-groovy $CLASQA_JAVA_OPTS qaPlot.groovy $dataset FT
 exe run-groovy $CLASQA_JAVA_OPTS qaCut.groovy $dataset FT
-#melding the two tables cp outdat.rgk7/qaTree.json ./qaTree.json.old && cp outdat.rgk7/qaTreeFT.json ./qaTree.json.new : exe run-groovy $CLASQA_JAVA_OPTS QA/meld/meld.groovy 
 
 # meld FT and FD json files from outdt.rgk7/qaTree.json
 exe run-groovy mergeFTandFD.groovy $dataset
