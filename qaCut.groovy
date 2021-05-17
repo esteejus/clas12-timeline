@@ -706,7 +706,7 @@ outHipoEpochs.writeFile(outHipoName)
 //println T.pPrint(qaTree)
 qaTree.each { qaRun, qaRunTree -> qaRunTree.sort{it.key.toInteger()} }
 qaTree.sort()
-new File("outdat.${dataset}/qaTree"+(useFT?"FT":"")+".json").write(JsonOutput.toJson(qaTree))
+new File("outdat.${dataset}/qaTree"+(useFT?"FT":"FD")+".json").write(JsonOutput.toJson(qaTree))
 
 
 // print total QA passing fractions
