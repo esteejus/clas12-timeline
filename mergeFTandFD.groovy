@@ -10,7 +10,11 @@ def debug = false
 
 
 if(args.length>=1) dataset = args[0]
-def fdFileN = "outdat.$dataset/qaTree.json"
+else {
+System.err << "ERROR: no run period is specified \n"
+return
+}
+def fdFileN = "outdat.$dataset/qaTreeFD.json"
 def ftFileN = "outdat.$dataset/qaTreeFT.json"
 def FDFile = new File(fdFileN)
 def FTFile = new File(ftFileN)
@@ -74,7 +78,7 @@ qaTreeFD.each{ runnum, fileTree ->
 
         if(defect==T.bit("LowLiveTime")) meldList << defect
       }
-
+meldList+=defectListFD
       // meld FT defect bits
       if(fileQAFT!=null) {
         defectListFT = T.getLeaf(fileQAFT,['sectorDefects',sector])
@@ -92,7 +96,7 @@ qaTreeFD.each{ runnum, fileTree ->
 
         }
       }
-
+meldList+=defectListFT
 meldList.unique()
       // add this sector's meldList to the OR of each sector's meldList,
       // and to the melded tree
@@ -123,5 +127,5 @@ meldList.unique()
 
 
 // output melded qaTree.json
-new File("qaTree.json.melded").write(JsonOutput.toJson(qaTreeMelded))
-['FD','FT','melded'].each{"./prettyPrint.sh $it".execute()}
+new File("outdat.${dataset}/qaTree.json").write(JsonOutput.toJson(qaTreeMelded))
+
