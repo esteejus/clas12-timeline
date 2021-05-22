@@ -20,7 +20,8 @@ class Tools {
     "Misc: miscellaneous defect, documented as comment",
     "TotalOutlierFT: outlier N/F, but not terminal, marginal, or sector loss, FT electron",
     "TerminalOutlierFT: outlier N/F of first or last file of run, not margina, FT electron",
-    "MarginalOutlierFT: marginal outlier N/F, within one stddev of cut line, FT electron"
+    "MarginalOutlierFT: marginal outlier N/F, within one stddev of cut line, FT electron",
+    "LossFT: N/F diminished within FT for several consecutive files"
 
   ]
 
