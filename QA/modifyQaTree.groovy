@@ -14,6 +14,7 @@ usage["sectorLoss"] = "sectorLoss: specify a sector loss"
 usage["setComment"] = "setComment: change or delete the comment"
 usage["addComment"] = "addComment: append a comment"
 usage["custom"] = "custom: do a custom action (see code)"
+usage["lossFT"] = "lossFT: specify a FT loss"
 println("\n\n")
 
 
@@ -128,7 +129,56 @@ if( cmd=="setBit" || cmd=="addBit" || cmd=="delBit") {
     return
   }
 }
+else if(cmd=="lossFT") {
+  def rnum,fnumL,fnumR
+  def secList = []
+  if(args.length>4) {
+    rnum = args[1].toInteger()
+    fnumL = args[2].toInteger()
+    fnumR = args[3].toInteger()
+    if(args[4]=="all") secList = (1..6).collect{it}
+    else (4..<args.length).each{ secList<<args[it].toInteger() }
 
+    println("run $rnum files ${fnumL}-"+(fnumR==1 ? "END" : fnumR) +
+      " sectors ${secList}: define sector loss")
+
+    println("Enter a comment, if you want, otherwise press return")
+    print("> ")
+    def cmt = System.in.newReader().readLine()
+
+    qaTree["$rnum"].each { k,v ->
+      def qaFnum = k.toInteger()
+      if( qaFnum>=fnumL && ( fnumR==1 || qaFnum<=fnumR ) ) {
+
+        secList.each{
+          qaTree["$rnum"]["$qaFnum"]["sectorDefects"]["$it"] -= T.bit("TotalOutlierFT")
+          qaTree["$rnum"]["$qaFnum"]["sectorDefects"]["$it"] -= T.bit("TerminalOutlierFT")
+          qaTree["$rnum"]["$qaFnum"]["sectorDefects"]["$it"] -= T.bit("MarginalOutlierFT")
+          qaTree["$rnum"]["$qaFnum"]["sectorDefects"]["$it"] += T.bit("LossFT")
+        }
+
+        recomputeDefMask(rnum,qaFnum)
+
+        if(cmt.length()>0) qaTree["$rnum"]["$qaFnum"]["comment"] = cmt
+      }
+    }
+
+  }
+ else {
+    def helpStr = usage["$cmd"].tokenize(':')[1]
+    println(
+    """
+    SYNTAX: ${cmd} [run] [firstFile] [lastFile] [list_of_sectors]
+      -$helpStr
+      - set [lastFile] to 1 to denote last file of run
+      - use \"all\" in place of [list_of_sectors] to apply to all sectors
+      - this will set the SectorLoss bit for specified files and sectors;
+        it will unset any other relevant bits
+      - you will be prompted to enter a comment
+    """)
+    return
+  }
+}
 else if(cmd=="sectorLoss") {
   def rnum,fnumL,fnumR
   def secList = []
@@ -164,6 +214,9 @@ else if(cmd=="sectorLoss") {
     }
 
   }
+
+
+
   else {
     def helpStr = usage["$cmd"].tokenize(':')[1]
     println(
