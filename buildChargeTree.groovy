@@ -40,6 +40,21 @@ dataFile.eachLine { line ->
   ufcStart = tok[r++].toBigDecimal()
   ufcStop = tok[r++].toBigDecimal()
   livetime = tok.size()>11 ? tok[r++].toBigDecimal() : -1
+  // TODO:  Added: add in tokenize routine for additional particles
+  particlesSize = tok.size()>12 ? tok[r++].toInteger() : 0
+  counter = 0
+  particles = []
+  nParticlesCD = [:]
+  nParticlesFD = [:]
+  nParticlesFT = [:]
+  while (counter<particlesSize) {
+    pid = tok[r++].toInteger()
+    particles.add(pid)
+    nParticlesCD[pid] = tok[r++].toBigDecimal()
+    nParticlesFD[pid] = tok[r++].toBigDecimal()
+    nParticlesFT[pid] = tok[r++].toBigDecimal()
+    counter++
+  }
   
   // fill tree
   if(sector==1) {
@@ -55,6 +70,12 @@ dataFile.eachLine { line ->
     )
   }
   T.addLeaf(chargeTree,[runnum,filenum,'nElec',sector],{nElec})
+  // TODO: Added: add leaves for additional particles
+  for (pid in particles) { 
+    T.addLeaf(chargeTree,[runnum,filenum,'nPid_'+pid+'_CD',sector],{nParticlesCD[pid]})
+    T.addLeaf(chargeTree,[runnum,filenum,'nPid_'+pid+'_FD',sector],{nParticlesFD[pid]})
+    T.addLeaf(chargeTree,[runnum,filenum,'nPid_'+pid+'_FT',sector],{nParticlesFT[pid]})
+    }
 }
 
 chargeTree.each { chargeRun, chargeRunTree -> chargeRunTree.sort{it.key.toInteger()} }
