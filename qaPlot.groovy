@@ -36,15 +36,15 @@ def ufcCharge
 def trigRat
 def errPrint = { str -> System.err << "ERROR in run ${runnum}_${filenum}: "+str+"\n" }
 def pidMap = [:]
-pidMap[11] = 'e^{-}'
-pidMap[22] = '#gamma'
-pidMap[211] = '#pi+'
-pidMap[-211] = '#pi-'
-pidMap[111] = '#pi^{0}'
-pidMap[321] = 'K^{+}'
-pidMap[-321] = 'K^{-}'
-pidMap[310] = 'K^{0}'
-pidMap[2212] = 'p^{+}'
+pidMap[11] = 'e-'
+pidMap[22] = 'γ'
+pidMap[211] = 'π+'
+pidMap[-211] = 'π-'
+pidMap[111] = 'π0'
+pidMap[321] = 'K+'
+pidMap[-321] = 'K-'
+pidMap[310] = 'K0'
+pidMap[2212] = 'p+'
 pidMap[2112] = 'n'
 
 //TODO: Added: defined variables for additional particles in detectors: structure is nParticles[ detector, nElec or [pids:nPid] ]
@@ -55,8 +55,8 @@ def defineGraph = { det,name,ytitle ->
 //TODO: Added: check for looping FD sectors or not
   if (det.contains('FD') && detectors.contains(det)) { //default plot to sectors
     sectors.collect {
-      def g = new GraphErrors(name+"_"+det+"_${runnum}_"+sec(it)) //NOTE: this formatting is useful for qaCut.groovy
-      def gT = ytitle+" vs. file number "+det+" -- Sector "+sec(it)
+      def g = new GraphErrors(name+"_"+det+"_${runnum}_"+sec(it)) //NOTE: This formatting is useful for qaCut.groovy
+      def gT = ytitle+" vs. file number -- Sector "+sec(it)
       g.setTitle(gT)
       g.setTitleY(ytitle)
       g.setTitleX("file number")
@@ -65,7 +65,7 @@ def defineGraph = { det,name,ytitle ->
   } // if (det.contains('FD') && ...)
   else {
     def g = new GraphErrors(name+(detectors.contains(det) ? "_"+det : det)+"_${runnum}") //NOTE: kind of a hack, just pass '_'+det for grF and grT
-    def gT = ytitle+" vs. file number "+det
+    def gT = ytitle+" vs. file number " //NOTE: Make sure det is included in ytitle when calling function where applicable
     g.setTitle(gT)
     g.setTitleY(ytitle)
     g.setTitleX("file number")
@@ -169,9 +169,10 @@ dataFile.eachLine { line ->
       grF[detectors[it]] = defineGraph('_'+detectors[it],"grF","Faraday cup charge F [nC]") //NOTE: empty string detector argument means graph will be split into sectors
       grT[detectors[it]] = defineGraph('_'+detectors[it],"grT","Live Time")
 
+      
       if (det.startsWith('e')) {
-        grNP[det][pid_e] = [ defineGraph(det,"grA","${det} DIS Electrons Normalized Yield N/F"),
-        defineGraph(det,"grN","${det} DIS Electrons Yield N") ]
+        grNP[det][pid_e] = [ defineGraph(det,"grA","${det[1..<det.size()]} DIS Electrons Normalized Yield N/F"),
+        defineGraph(det,"grN","${det[1..<det.size()]} DIS Electrons Yield N") ]
       }
       else {
         for (pid in particles) grNP[det][pid] = [ defineGraph(det,"grA_PID${pid}","${det} ${pidMap[pid]} Normalized Yield N/F"),

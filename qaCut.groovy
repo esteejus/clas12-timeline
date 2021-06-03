@@ -35,16 +35,19 @@ def jPrint = { name,object -> new File(name).write(JsonOutput.toJson(object)) }
 
 // PID to names map
 def pidMap = [:]
-pidMap[11] = 'e^{-}'
-pidMap[22] = '#gamma'
-pidMap[211] = '#pi+'
-pidMap[-211] = '#pi-'
-pidMap[111] = '#pi^{0}'
-pidMap[321] = 'K^{+}'
-pidMap[-321] = 'K^{-}'
-pidMap[310] = 'K^{0}'
-pidMap[2212] = 'p^{+}'
+pidMap[11] = 'e-'
+pidMap[22] = 'γ'
+pidMap[211] = 'π+'
+pidMap[-211] = 'π-'
+pidMap[111] = 'π0'
+pidMap[321] = 'K+'
+pidMap[-321] = 'K-'
+pidMap[310] = 'K0'
+pidMap[2212] = 'p+'
 pidMap[2112] = 'n'
+
+def passingFractions = [:]
+for (det in detectors) { passingFractions[det] = [:] }
 
 // read epochs list file
 def epochFile = new File("epochs.${dataset}.txt")
@@ -94,7 +97,6 @@ dataFile.eachLine { line ->
   }
 }
 
-
 // open hipo file
 detectors.each{ det ->
   def inTdir = new TDirectory()
@@ -112,7 +114,6 @@ detectors.each{ det ->
   } //NOTE: PID[Lund pid] should be second, check qaPlot.groovy
   if (userPIDList.size()==0) userPIDList = [0] // for particle specific "detectors" like 'eCFD/eFD'
   userPIDList.each{ pid ->
-    if (det.startsWith('e')) pid = 11 //TODO: Not sure about this still...
 
     // define 'ratioTree', a tree with the following structure
     /* 
@@ -146,7 +147,7 @@ detectors.each{ det ->
     // loop over 'grA' graphs (of N/F vs. filenum), filling ratioTree leaves
     def (minA,maxA) = [100000,0]
     inList.each { obj ->
-      if(obj.contains("/grA_")) {
+      if(obj.contains("/grA_") && (pid!=0 ? obj.contains("PID${pid}") : true)) { //TODO: Could make this nicer...
 
         // get runnum and sector
         runnum = 0; sector = 0;
@@ -322,7 +323,7 @@ detectors.each{ det ->
     def defineTimeline = { title,ytitle,name ->
       sectors.collect { s ->
         if( hasSectors || (!hasSectors && s==0) ) {
-          def gN = !hasSectors ? "${name}_${det}" : "${name}_sector_"+sec(s)
+          def gN = !hasSectors ? "${name}_${det}_${pid}" : "${name}_${det}_${pid}_sector_"+sec(s)
           def g = new GraphErrors(gN)
           g.setTitle(title)
           g.setTitleY(ytitle)
@@ -450,7 +451,7 @@ detectors.each{ det ->
     def defectList = []
     def badfile
     inList.each { obj ->
-      if(obj.contains("/grA_")) {
+      if(obj.contains("/grA_") && (pid!=0 ? obj.contains("PID${pid}") : true)) {
 
         // get runnum, sector, epoch
         runnum = 0; sector = 0;
@@ -741,7 +742,10 @@ detectors.each{ det ->
     def PF = nGoodTotal / (nGoodTotal+nBadTotal)
     def FF = 1-PF
     //TODO: Modified printout to include PID and detector info
-    if(qaBit<0) println "\nQA cut overall passing fraction for detector ${det} and PID ${pid}: $PF"
+    if(qaBit<0) {
+      println "\nQA cut overall passing fraction for detector ${det} and PID ${pid}: $PF";
+      passingFractions[det][pid] = "$PF"
+    }
     else {
       //TODO: Modified naming scheme
       def PFfile = new File("outdat.${dataset}/passFractions${det}"+(det.startsWith('e') ? "" : "_PID${pid}")+".dat")
@@ -753,4 +757,12 @@ detectors.each{ det ->
     }
   } //userPIDList.each
 }//detectors.each
+
+// Print out files fractions passed by pid/detector
+def header = ["Detector","PID","# Files passing"]; printf(sprintf(' %1$-10s %2$-10s %3$-10s\n', header))
+println " ---------------------------------------------------------------------------- "
+for (det in passingFractions.keySet()) { for (pid in passingFractions[det].keySet()) {
+    def row = [det, (det.startsWith('e') ? 11 : Integer.toString(pid)), passingFractions[det][pid]];
+    printf(sprintf(' %1$-10s %2$-10s %3$-10s\n', row))
+} }
 
