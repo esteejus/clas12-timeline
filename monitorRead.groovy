@@ -20,15 +20,23 @@ Tools T = new Tools()
 
 // OPTIONS
 def segmentSize = 10000 // number of events in each segment
-def inHipoType = "dst" // options: "dst", "skim"
+def inHipoType = "dst" // options: "dst", "skim"\
+
+//TODO: Added list of particle to count
+def particles = [211,-211,22] // options: -addPs=pid1,pid2,... adds to current list
+                              //          -ps=pid1,pid2,... modifies current list
 
 
 // ARGUMENTS
 def inHipo = "skim/skim4_5052.hipo" // directory of DST files, or a single SKIM file
+if(args.length==0) { println "Usage: run-groovy monitorRead.groovy [hipofile] [hipotype] [particle pidlist option]"; return;}
 if(args.length>=1) inHipo = args[0]
 if(args.length>=2) inHipoType = args[1]
 
-
+//TODO: Added command line options to modify list of particles to count
+if(args.length>=3 && args[2].startsWith("-ps=")) particles = args[2].split('=')[1].split(',')
+if(args.length>=3 && args[2].startsWith("-addPs=")) particles.addAll(arg.split('=')[1].split(','))
+particles.unique() // Make sure you don't have multiple identical entries
 
 // get hipo file names
 def inHipoList = []
@@ -49,7 +57,6 @@ else {
   System.err << "ERROR: unknown inHipoType setting\n"
   return
 }
-
 
 // get runnum
 def runnum
@@ -224,7 +231,6 @@ def buildHist(histName, histTitle, propList, runn, nb, lb, ub, nb2=0, lb2=0, ub2
   else return new H2F(hn,ht,nb,lb,ub,nb2,lb2,ub2)
 }
 
-
 // define variables
 def event
 def pidList = []
@@ -272,6 +278,35 @@ def countEvent
 def caseCountNtrigGT1 = 0
 def caseCountNFTwithTrig = 0
 def nElecTotal
+
+//TODO: Added
+def particle = [:]
+def pFound = [:]
+for (pid in particles) { particle.put(pid,[]); pFound.put(pid,false) }
+
+//TODO: Added
+def pSec = [:] // just for FD currently...
+for (pid in particles) { pSec.put(pid,-1) } // set sector to -1 as default not sure if this will mess things up
+
+//TODO: Added
+def nParticlesCD = [:]
+def nParticlesFD = [:]
+def nParticlesFT = [:]
+for (pid in particles) { nParticlesCD.put(pid,0); nParticlesFD.put(pid,sectors.collect{0}); nParticlesFT.put(pid,0) }
+
+//TODO: Added
+def pcaseCountNCDGT1 = [:]
+def pcaseCountNFDGT1 = [:]
+def pcaseCountNFT = [:]
+for (pid in particles) { pcaseCountNCDGT1.put(pid,0); pcaseCountNFDGT1.put(pid,0); pcaseCountNFT.put(pid,0) }
+def npTotal = [:]
+
+//TODO: Added
+for (pid in particles) { npTotal.put(pid,0) }
+def pInCD = [:]
+def pInFD = [:]
+def pInFT = [:]
+for (part in particles) { pInCD.put(part,false); pInFD.put(part,false); pInFT.put(part,false) }
 
 // lorentz vectors
 def vecBeam = new LorentzVector(0, 0, EBEAM, EBEAM)
@@ -441,9 +476,147 @@ def findParticles = { pid ->
   }
   //println "pid=$pid  found in rows $rowList"
 
+  //TODO: Moved this functionality to countParticles method
   // if looking for electrons, also count the number of trigger electrons,
   // and find the DIS electron
-  if(pid==11) countTriggerElectrons(rowList,particleList)
+  //if(pid==11) countTriggerElectrons(rowList,particleList)
+
+  // return list of Particle objects
+  return particleList
+}
+
+// subroutine which returns a list of Particle objects of a certain PID
+def countParticles = { pid ->
+
+  // get list of bank rows and Particle objects corresponding to this PID
+  def rowList = pidList.findIndexValues{ it == pid }.collect{it as Integer}
+  def particleList = rowList.collect { row ->
+    new Particle(pid,*['px','py','pz'].collect{particleBank.getFloat(it,row)})
+  }
+  //println "pid=$pid  found in rows $rowList"
+
+  // if looking for electrons, also count the number of trigger electrons,
+  // and find the DIS electron
+  if(pid==11) { countTriggerElectrons(rowList,particleList);  return particleList }
+
+  // reset some vars
+  pInCD.put(pid,false)
+  pInFD.put(pid,false)
+  pInFT.put(pid,false)
+  def nCD = 0
+  def nFD = 0
+  def nFT = 0
+  pFound.put(pid,false)
+  
+  if(rowList.size()>0) {
+    rowList.eachWithIndex { row,ind ->
+
+      // Reset for arbitrary particles since you can have several per event unlike scattered electron
+      pInCD.put(pid,false)
+      pInFD.put(pid,false)
+      pInFT.put(pid,false)
+      pFound.put(pid,false)
+
+      def status = particleBank.getShort('status',row)
+      def chi2pid = particleBank.getFloat('chi2pid',row) //TODO: not used currently
+
+      // PARTICLES (CD) CUT
+      // - must CD bit set
+      if( Math.abs(status/1000).toInteger() & 0x2 ) {
+
+          nCD++ // count how many central detector particles we looked at
+
+          pInCD.put(pid,true)
+          pInFT.put(pid,false)
+          particle.get(pid).add(particleList[ind])
+
+      } // CD Particles
+
+      // PARTICLES (FD) CUT
+      // - must FD bit set
+      // - must appear in ECAL, to obtain sector
+      if( Math.abs(status/1000).toInteger() & 0x2) {
+
+        // get sector
+        def pSecTmp = (0..calBank.rows()).collect{
+          ( calBank.getShort('pindex',it).toInteger() == row &&
+            calBank.getByte('detector',it).toInteger() == detIdEC ) ?
+            calBank.getByte('sector',it).toInteger() : null
+        }.find()
+
+        // CUT for particles: sector must be defined
+        if(pSecTmp!=null) {
+
+          nFD++ // count how many forward/central detector particles we looked at
+
+          pSec.put(pid,pSecTmp)
+          pInFD.put(pid,true)
+          pInFT.put(pid,false)
+          particle.get(pid).add(particleList[ind])
+
+        } else {
+          //System.err << "WARNING: found particle with unknown sector\n" //TODO: Commented out since you get a lot of these....
+        }
+      } // FD Particles
+
+      // FT Particles
+      // - REC::Particle:status has FT bit
+      // - must also appear in RECFT::Particle with FT bit
+      if( Math.abs(status/1000).toInteger() & 0x1 ) {
+        if( FTparticleBank.rows() > row ) {
+          def FTpid = FTparticleBank.getInt('pid',row)
+          def FTstatus = FTparticleBank.getShort('status',row)
+          if( FTpid==pid && Math.abs(FTstatus/1000).toInteger() & 0x1 ) {
+
+            nFT++ // count how many FT particles we looked at
+
+            pInFT.put(pid,true)
+            particle.get(pid).add(particleList[ind])
+          }
+        }
+      } // FT Particles
+
+      // Increment counters
+      if(pInCD.get(pid) || pInFD.get(pid) || pInFT.get(pid)) {
+
+        // TODO: Not sure if this actually applies for all particles...
+        // - increment counters, and set `pFound`
+        if((pInCD.get(pid) || pInFD.get(pid)) && pInFT.get(pid)) { // can never happen (failsafe) except for photons?
+          if (pid!=22) System.err << "ERROR: pInCFD[" << pid << "] && pInFT[" << pid << "] == 1; skip particle\n"
+          return;
+        }
+        else if(pInCD.get(pid)) {
+          nParticlesCD[pid]++ // NOTE: For some reason trying .get(pid)++ does not work...
+          //pFound.put(pid,true)
+        }
+        else if(pInFD.get(pid)) {
+          nParticlesFD.get(pid)[pSec.get(pid)-1]++
+          //pFound.put(pid,true)
+        }
+        else if(pInFT.get(pid)) {
+          nParticlesFT[pid]++ // NOTE: For some reason trying .get(pid)++ does not work...
+          //pFound.put(pid,true)
+        }
+
+        pFound.put(pid,true)
+
+        //TODO: Not really sure if all the following is necessary...needs to be refined...
+
+        // // increment 'case counters' (for studying overlap of CD/FD/FT cuts)
+        // // - case where there are more than one particle in CD
+        // if(pInCD.get(pid) && nCD>1)
+        //   pcaseCountNCDGT1.get[pid] += nCD // count number of unanalyzed trigger (FD) electrons
+        // // - case where there are more than one particle in FD
+        // if(pInFD.get(pid) && nFD>1)
+        //   pcaseCountNFDGT1[pid] += nFD-1 // count number of unanalyzed extra electrons
+        // // - case where particle is in FT, but there are trigger electrons in FD
+        // if(pInFT.get(pid) && (nCD+nFD)>0)
+        //   pcaseCountNFT.get[pid] += nFD + nCD // count number of unanalyzed trigger (FD) electrons
+
+      }
+
+    } // eo loop through REC::Particle
+  } // eo if nonempty REC::Particle
 
   // return list of Particle objects
   return particleList
@@ -513,7 +686,7 @@ def writeHistos = {
        eventNumList.collect{ n -> Math.pow((n-segmentNum),2) }.sum() / 
        (eventNumList.size()-1)
       ))
-      print "eventNum ave=$segmentNum dev=$segmentDev"
+      print "eventNum ave=$segmentNum dev=$segmentDev "
       print "min=$eventNumMin max=$eventNumMax\n"
     }
     else if(inHipoType=="dst") {
@@ -531,7 +704,7 @@ def writeHistos = {
       histT = T.leaf.getTitle() + " :: segment=${segmentNum}"
       T.leaf.setName(histN)
       T.leaf.setTitle(histT)
-      outHipo.addDataSet(T.leaf) 
+      outHipo.addDataSet(T.leaf)
     })
     //println "write histograms:"; T.printTree(histTree,{T.leaf.getName()})
 
@@ -583,7 +756,12 @@ def writeHistos = {
       datfileWriter << [ runnum, segmentNum ].join(' ') << ' '
       datfileWriter << [ eventNumMin, eventNumMax ].join(' ') << ' '
       datfileWriter << [ sec+1, nElec[sec], nElecFT ].join(' ') << ' '
-      datfileWriter << [ fcStart, fcStop, ufcStart, ufcStop, aveLivetime ].join(' ') << '\n'
+      datfileWriter << [ fcStart, fcStop, ufcStart, ufcStop, aveLivetime ].join(' ') << ' '
+      //TODO: Added
+      // Add length before
+      datfileWriter << particles.size() << ' ' // don't forget space on end
+      for (part in particles) { datfileWriter << [ part, nParticlesCD.get(part), nParticlesFD.get(part)[sec], nParticlesFT.get(part) ].join(' ') << ' ' }
+      datfileWriter << '\n' // TODO: Hopefully this does not mess up tokenizing later on...
     }
 
     // print some stats
@@ -609,6 +787,11 @@ def writeHistos = {
   FClist = []
   LTlist = []
   eventNumList.clear()
+  //TODO: Added reset particle counts for CD/FD/FT
+  nParticlesCD = [:]
+  nParticlesFD = [:]
+  nParticlesFT = [:]
+  for (pid in particles) { nParticlesCD.put(pid,0); nParticlesFD.put(pid,sectors.collect{0}); nParticlesFT.put(pid,0) }
 }
 
 
@@ -724,8 +907,10 @@ inHipoList.each { inHipoFile ->
 
     // get electron list, and increment the number of trigger electrons
     // - also finds the DIS electron, and calculates x,Q2,W,y,nu
-    eleList = findParticles(11) // (`eleList` is unused)
+    eleList = countParticles(11) // (`eleList` is unused) //TODO: Moved functionality from findParticles method
 
+    //TODO: Added
+    particlesList = particles.collect{ part -> countParticles(part) } // particlesList is unused
 
     // CUT: if a dis electron was found (see countTriggerElectrons)
     if(disEleFound) {
@@ -785,4 +970,6 @@ File outHipoFile = new File(outHipoN)
 if(outHipoFile.exists()) outHipoFile.delete()
 outHipo.writeFile(outHipoN)
 if(inHipoType=="dst") datfileWriter.close()
+//TODO: Added for development purposes...
+else datfileWriter.close()
 
