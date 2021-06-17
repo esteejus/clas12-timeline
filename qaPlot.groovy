@@ -35,17 +35,17 @@ def fcCharge
 def ufcCharge
 def trigRat
 def errPrint = { str -> System.err << "ERROR in run ${runnum}_${filenum}: "+str+"\n" }
-def pidMap = [:]
-pidMap[11] = 'e-'
-pidMap[22] = 'γ'
-pidMap[211] = 'π+'
-pidMap[-211] = 'π-'
-pidMap[111] = 'π0'
-pidMap[321] = 'K+'
-pidMap[-321] = 'K-'
-pidMap[310] = 'K0'
-pidMap[2212] = 'p+'
-pidMap[2112] = 'n'
+def pidMap   = [:]
+pidMap[11]   = ['e-','electron']
+pidMap[22]   = ['γ','photon']
+pidMap[211]  = ['π+','pip']
+pidMap[-211] = ['π-','pim']
+pidMap[111]  = ['π0','pi0']
+pidMap[321]  = ['K+','kp']
+pidMap[-321] = ['K-','km']
+pidMap[310]  = ['K0','k0']
+pidMap[2212] = ['p+','proton']
+pidMap[2112] = ['n','neutron']
 
 //TODO: Added: defined variables for additional particles in detectors: structure is nParticles[ detector, nElec or [pids:nPid] ]
 def nParticles = [:]; for (det in detectors) { nParticles.put(det,[:]) }
@@ -175,8 +175,8 @@ dataFile.eachLine { line ->
         defineGraph(det,"grN","${det[1..<det.size()]} DIS Electrons Yield N") ]
       }
       else {
-        for (pid in particles) grNP[det][pid] = [ defineGraph(det,"grA_PID${pid}","${det} ${pidMap[pid]} Normalized Yield N/F"),
-        defineGraph(det,"grN_PID${pid}","${det} ${pidMap[pid]} Yield N") ]
+        for (pid in particles) grNP[det][pid] = [ defineGraph(det,"grA_PID${pid}","${det} ${pidMap[pid][0]} Normalized Yield N/F"),
+        defineGraph(det,"grN_PID${pid}","${det} ${pidMap[pid][0]} Yield N") ]//TODO: DEBUGGING CHANGED gr*_PID${pid} -> pidMap[pid]
       }
     }
     runnumTmp = runnum

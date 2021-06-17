@@ -522,7 +522,7 @@ def countParticles = { pid ->
 
       // PARTICLES (CD) CUT
       // - must CD bit set
-      if( Math.abs(status/1000).toInteger() & 0x2 ) {
+      if( Math.abs(status/1000).toInteger() & 0x4 ) {
 
           nCD++ // count how many central detector particles we looked at
 
@@ -539,8 +539,8 @@ def countParticles = { pid ->
 
         // get sector
         def pSecTmp = (0..calBank.rows()).collect{
-          ( calBank.getShort('pindex',it).toInteger() == row &&
-            calBank.getByte('detector',it).toInteger() == detIdEC ) ?
+          ( calBank.getShort('pindex',it).toInteger() == row /*&&
+            calBank.getByte('detector',it).toInteger() == detIdEC*/ ) ? //TODO: Not detIdEC but just cal?
             calBank.getByte('sector',it).toInteger() : null
         }.find()
 
@@ -555,18 +555,18 @@ def countParticles = { pid ->
           particle.get(pid).add(particleList[ind])
 
         } else {
-          //System.err << "WARNING: found particle with unknown sector\n" //TODO: Commented out since you get a lot of these....
+          // System.err << "WARNING: found particle with unknown sector, pid = ${pid}\n" //TODO: Commented out since you get a lot of these....
         }
       } // FD Particles
 
       // FT Particles
-      // - REC::Particle:status has FT bit
-      // - must also appear in RECFT::Particle with FT bit
+      // - REC::Particle: status has FT bit
+      // - must also appear in RECFT::Particle with FT bit (NOTE: CURRENTLY NOT REQUIRED) (Don't think it changed anything either...)
       if( Math.abs(status/1000).toInteger() & 0x1 ) {
         if( FTparticleBank.rows() > row ) {
           def FTpid = FTparticleBank.getInt('pid',row)
           def FTstatus = FTparticleBank.getShort('status',row)
-          if( FTpid==pid && Math.abs(FTstatus/1000).toInteger() & 0x1 ) {
+          if( (FTpid==pid && Math.abs(FTstatus/1000).toInteger() & 0x1) || pid!=9999 ) {
 
             nFT++ // count how many FT particles we looked at
 
@@ -622,8 +622,6 @@ def countParticles = { pid ->
   return particleList
 }
 
-
-
 // subroutine to calculate hadron (pion) kinematics, and fill histograms
 // note: needs to have some kinematics defined (vecQ,Q2,W), and helStr
 def fillHistos = { list, partN ->
@@ -662,7 +660,6 @@ def fillHistos = { list, partN ->
   }
 }
 
-
 // subroutine to write out to hipo file
 def outHipo = new TDirectory()
 outHipo.mkdir("/$runnum")
@@ -696,7 +693,6 @@ def writeHistos = {
       segmentDev = 0
     }
 
-
     // loop through histTree, adding histos to the hipo file;
     // note that the average event number is appended to the name
     T.exeLeaves( histTree, {
@@ -707,7 +703,6 @@ def writeHistos = {
       outHipo.addDataSet(T.leaf)
     })
     //println "write histograms:"; T.printTree(histTree,{T.leaf.getName()})
-
 
     // get FC charge
     def ufcStart
@@ -794,8 +789,6 @@ def writeHistos = {
   for (pid in particles) { nParticlesCD.put(pid,0); nParticlesFD.put(pid,sectors.collect{0}); nParticlesFT.put(pid,0) }
 }
 
-
-
 //----------------------
 // event loop
 //----------------------
@@ -824,11 +817,9 @@ inHipoList.each { inHipoFile ->
     calBank = event.getBank("REC::Calorimeter")
     scalerBank = event.getBank("RUN::scaler")
 
-
     // get list of PIDs, with list index corresponding to bank row
     pidList = (0..<particleBank.rows()).collect{ particleBank.getInt('pid',it) }
     //println "pidList = $pidList"
-
 
     // update segment number, if reading skim file
     if(inHipoType=="skim") segment = (evCount/segmentSize).toInteger()
@@ -879,7 +870,6 @@ inHipoList.each { inHipoFile ->
       segmentTmp = segment
     }
 
-
     // get helicity and fill helicity distribution
     if(event.hasBank("REC::Event")) helicity = eventBank.getByte('helicity',0)
     else helicity = 0 // (undefined)
@@ -891,7 +881,6 @@ inHipoList.each { inHipoFile ->
     }
     histTree.helic.dist.fill(helicity)
 
-    
     // get FC charge
     if(scalerBank.rows()>0) {
       UFClist << scalerBank.getFloat("fcup",0) // ungated charge
@@ -903,7 +892,6 @@ inHipoList.each { inHipoFile ->
     if(FCmode==2 && eventBank.rows()>0) {
       FClist << eventBank.getFloat("beamCharge",0) // gated charge
     }
-
 
     // get electron list, and increment the number of trigger electrons
     // - also finds the DIS electron, and calculates x,Q2,W,y,nu
@@ -972,4 +960,3 @@ outHipo.writeFile(outHipoN)
 if(inHipoType=="dst") datfileWriter.close()
 //TODO: Added for development purposes...
 else datfileWriter.close()
-

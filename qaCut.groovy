@@ -33,18 +33,18 @@ def runnum, filenum, sector, epoch, evnumMin, evnumMax
 def gr
 def jPrint = { name,object -> new File(name).write(JsonOutput.toJson(object)) }
 
-// PID to names map
-def pidMap = [:]
-pidMap[11] = 'e-'
-pidMap[22] = 'γ'
-pidMap[211] = 'π+'
-pidMap[-211] = 'π-'
-pidMap[111] = 'π0'
-pidMap[321] = 'K+'
-pidMap[-321] = 'K-'
-pidMap[310] = 'K0'
-pidMap[2212] = 'p+'
-pidMap[2112] = 'n'
+def pidMap   = [:]
+pidMap[11]   = ['e-','electron']
+pidMap[22]   = ['γ','photon']
+pidMap[211]  = ['π+','pip']
+pidMap[-211] = ['π-','pim']
+pidMap[111]  = ['π0','pi0']
+pidMap[321]  = ['K+','kp']
+pidMap[-321] = ['K-','km']
+pidMap[310]  = ['K0','k0']
+pidMap[2212] = ['p+','proton']
+pidMap[2112] = ['n','neutron']
+pidMap[0]    = ['undefined','undefined']
 
 def passingFractions = [:]
 for (det in detectors) { passingFractions[det] = [:] }
@@ -109,10 +109,12 @@ detectors.each{ det ->
   else { sectors = [0]; hasSectors = false; }
   userPIDList = []
 
-  if (!det.startsWith('e')) inList.each { obj -> 
+  if (!det.startsWith('e')) inList.each { obj -> //TODO Think about what this does with FC and LT graphs...
     if(obj.contains("/grA_PID")) { userPIDList.add(obj.tokenize('_')[1].split('PID')[1].toInteger()) }
   } //NOTE: PID[Lund pid] should be second, check qaPlot.groovy
   if (userPIDList.size()==0) userPIDList = [0] // for particle specific "detectors" like 'eCFD/eFD'
+  println "userPIDList = ${userPIDList}"
+  userPIDList.unique()//IMPORTANT!
   userPIDList.each{ pid ->
 
     // define 'ratioTree', a tree with the following structure
@@ -265,7 +267,7 @@ detectors.each{ det ->
       map.put(name+"_bad",plots[1])
     }
     //TODO: Modified naming scheme
-    def particleT = "${det} ${pidMap[pid]}"
+    def particleT = "${det} ${pidMap[pid][0]}"
     if (det.startsWith('e')) particleT = !hasSectors ? "Forward Tagger Electron" : "Trigger Electron"
     sectors.each { s ->
       sectorIt = sec(s)
@@ -324,6 +326,7 @@ detectors.each{ det ->
       sectors.collect { s ->
         if( hasSectors || (!hasSectors && s==0) ) {
           def gN = !hasSectors ? "${name}_${det}_${pid}" : "${name}_${det}_${pid}_sector_"+sec(s)
+          gN = (name == "F" || name == "LT") ? "${name}" : gN
           def g = new GraphErrors(gN)
           g.setTitle(title)
           g.setTitleY(ytitle)
@@ -709,7 +712,7 @@ detectors.each{ det ->
       if(outHipoFile.exists()) outHipoFile.delete()
       tdir.writeFile(outHipoName)
     }
-    particleN = "PID${pid}_${det}"
+    particleN = "${pidMap[pid][1]}_${det}"
     if (det.startsWith('e')) particleN = "electron_" + (!hasSectors ? "FT" : "trigger") //TODO: Could just use the 'eCFD/eFT' detector names here...
     writeTimeline(outHipoQA,TLqa,"${particleN}_yield_QA_${qaName}",false)
     writeTimeline(outHipoA,TLA,"${particleN}_yield_normalized_values")
