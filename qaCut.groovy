@@ -15,6 +15,7 @@ qaBit = -1 // if positive, produce QA timeline based on QA/qa.${dataset}/qaTree.
 if(args.length>=1) dataset = args[0]
 if(args.length>=2) useFT = (args[1]=="FT") ? true : false
 if(args.length>=3) qaBit = args[2].toInteger()
+if(qaBit>5) useFT = true
 //--------------------------------------------------------------------------
 
 // vars and subroutines
@@ -156,11 +157,12 @@ def median = { d ->
 
 // establish cut lines using 'cutFactor' x IQR method, and fill cutTree
 // - note: for the FT electrons, it seems that N/F has a long tail toward
-//   lower values, so cutLo is forced to be lower 
+//   lower values, so cutLo is forced to be lower - modified
 def cutFactor = 4.0
 def mq,lq,uq,iqr,cutLo,cutHi
 sectors.each { s ->
   sectorIt = sec(s)
+ if( !useFT || (useFT && sectorIt==1)) {
   ratioTree[sectorIt].each { epochIt,ratioList ->
 
     mq = median(ratioList) // middle quartile
@@ -179,6 +181,7 @@ sectors.each { s ->
     cutTree[sectorIt][epochIt]['cutLo'] = cutLo
     cutTree[sectorIt][epochIt]['cutHi'] = cutHi
   }
+}
 }
 //jPrint("cuts.${dataset}.json",cutTree) // output cutTree to JSON
 //println T.pPrint(cutTree)
@@ -231,7 +234,9 @@ def insertEpochPlot = { map,name,plots ->
 def electronT = useFT ? "Forward Tagger Electron" : "Trigger Electron"
 sectors.each { s ->
   sectorIt = sec(s)
-  ratioTree[sectorIt].each { epochIt,ratioList ->
+ 
+ if( !useFT || (useFT && sectorIt==1)) {
+ ratioTree[sectorIt].each { epochIt,ratioList ->
     insertEpochPlot(epochPlotTree[sectorIt][epochIt],
       "grA",defineEpochPlot("grA_epoch","${electronT} N/F",sectorIt,epochIt))
     insertEpochPlot(epochPlotTree[sectorIt][epochIt],
@@ -242,7 +247,7 @@ sectors.each { s ->
       "grT",defineEpochPlot("grT_epoch","Live Time",sectorIt,epochIt))
   }
 }
-
+}
 
 // define output hipo files and outliers list
 def outHipoQA = new TDirectory()
@@ -535,12 +540,20 @@ inList.each { obj ->
           if( LT<0.9 ) defectList.add(T.bit("LowLiveTime"))
 
           // insert in qaTree
-          qaTree[runnum][filenum]['sectorDefects'][sector] = defectList.collect()
+         if(!useFT) qaTree[runnum][filenum]['sectorDefects'][sector] = defectList.collect()
+         if(useFT) qaTree[runnum][filenum]['sectorDefects'][1] = defectList.collect()
+
           badfile = defectList.size() > 0
         }
         else {
           // lookup defectList for this sector
-          if(qaBit==100) { // bad if not perfect
+//println qaTree // this should be fine
+
+//println qaTree["$runnum"]
+
+//println qaTree["$runnum"]["$filenum"]
+
+         if(qaBit==100) { // bad if not perfect
             badfile = qaTree["$runnum"]["$filenum"]['sectorDefects']["$sector"].size() > 0
           } else { // bad only if defectList includes qaBit
             if(qaTree["$runnum"]["$filenum"]['sectorDefects']["$sector"].size()>0) {
@@ -666,11 +679,13 @@ def writeTimeline (tdir,timeline,title,once=false) {
   tdir.mkdir("/timelines")
   tdir.cd("/timelines")
   if(once) {
+println "Entrato"
     def name = timeline[0].getName().replaceAll(/_sector.*$/,"")
     timeline[0].setName(name)
     tdir.addDataSet(timeline[0])
   }
   else {
+it=0;
     timeline.each { tdir.addDataSet(it) }
   }
   def outHipoName = "outmon.${dataset}/${title}.hipo"
@@ -680,10 +695,10 @@ def writeTimeline (tdir,timeline,title,once=false) {
 }
 
 electronN = "electron_" + (useFT ? "FT" : "trigger")
-writeTimeline(outHipoQA,TLqa,"${electronN}_yield_QA_${qaName}")
-writeTimeline(outHipoA,TLA,"${electronN}_yield_normalized_values")
-writeTimeline(outHipoN,TLN,"${electronN}_yield_values")
-writeTimeline(outHipoSigmaN,TLsigmaN,"${electronN}_yield_stddev")
+writeTimeline(outHipoQA,TLqa,"${electronN}_yield_QA_${qaName}",useFT)
+writeTimeline(outHipoA,TLA,"${electronN}_yield_normalized_values",useFT)
+writeTimeline(outHipoN,TLN,"${electronN}_yield_values",useFT)
+writeTimeline(outHipoSigmaN,TLsigmaN,"${electronN}_yield_stddev",useFT)
 if(!useFT) {
   writeTimeline(outHipoF,TLF,"faraday_cup_charge",true)
   writeTimeline(outHipoT,TLT,"live_time",true)
