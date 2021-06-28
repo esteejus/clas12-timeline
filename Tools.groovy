@@ -189,4 +189,23 @@ class Tools {
   // print text output
   def printStatus = { str -> println "STATUS: $str" }
   def printError = { str -> System.err << "ERROR: $str\n" }
+
+  /////////////////////////
+  // PID & Detector Maps //
+  /////////////////////////
+
+  // // Lund PID to graph title names and file naming names
+  // def pidMap   = [11:['e-','electron'],
+  //                 22:['γ','photon'],
+  //                 211:['π+','pip'],
+  //                 -211:['π-','pim'],
+  //                 111:['π0','pi0'],
+  //                 321:['K+','kp'],
+  //                 -321:['K-','km'],
+  //                 311:['K0','k0'],
+  //                 2212:['p+','proton'],
+  //                 2112:['n','neutron']]
+
+  def detectors = ["eCFD","eFT","CD","FD","FT"]
+  def implementedDetectors = ['CD','FD','FT'] // for particle loops, DIS electrons are treated separately
 }

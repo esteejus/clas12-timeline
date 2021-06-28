@@ -8,6 +8,18 @@ import Tools
 Tools T = new Tools()
 
 //--------------------------------------------------------------------------
+// SQLite3 IMPORTS AND DEPENDENCIES
+@Grapes([
+ @Grab(group='org.xerial',module='sqlite-jdbc',version='3.7.2'),
+ @GrabConfig(systemClassLoader=true)
+])
+ 
+import java.sql.*
+import org.sqlite.SQLite
+import groovy.sql.Sql
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
 // ARGUMENTS:
 dataset = 'inbending1'
 def detectors = ["eCFD","eFT","CD","FD","FT"]
@@ -24,6 +36,32 @@ if(args.length>=2 && args[1].startsWith("-addDs=")) { for (det in args[1].split(
 detectors.unique() // Make sure you don't double count
 
 if(args.length>=3) qaBit = args[2].toInteger()
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
+// CREATE SQL DATABASE AND TABLE
+def db_path = "outdat."+dataset+"/"+dataset+".db" //TODO: Add option to manually specify path to db
+def sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
+def force = true // force overwrite of database
+if (force) sql.execute("drop table if exists "+dataset)
+try { sql.execute("create table "+dataset+
+      " (id integer, run integer, filenum integer,"+
+      " evmin integer, evmax integer, livetime integer,"+
+      "detector string, pid integer,"+
+      "defect integer, sector integer, sectordefect integer, comment string)")
+} catch (SQLException e) {
+  println "*** ERROR ***  Database ${dataset} already exists."
+  e.printStackTrace()
+  System.exit(0)
+}
+def db
+try { db = sql.dataSet(dataset) 
+} catch (SQLException e) {
+  println "*** ERROR *** Could not create dataset ${dataset}."
+  e.printStackTrace()
+  System.exit(0)
+}
+def id = 0 // global counter for entries added to database
 //--------------------------------------------------------------------------
 
 // vars and subroutines
@@ -75,11 +113,10 @@ def getEpochBounds = { e ->
   }
 }
 
-
 // build map of (runnum,filenum) -> (evnumMin,evnumMax)
 def dataFile = new File("outdat.${dataset}/data_table.dat")
 def tok
-def evnumTree = [:]
+def evnumTree = [:] // TODO: Modify how this file should be written
 if(!(dataFile.exists())) throw new Exception("data_table.dat not found")
 dataFile.eachLine { line ->
   tok = line.tokenize(' ')
@@ -97,6 +134,17 @@ dataFile.eachLine { line ->
   }
 }
 
+// define qaTree
+def qaTree // [runnum][filenum] -> defects enumeration
+def slurper
+def jsonFile
+if(qaBit>=0) {
+  slurper = new JsonSlurper()
+  jsonFile = new File("QA/qa.${dataset}/qaTree.json")
+  qaTree = slurper.parse(jsonFile)
+}
+else qaTree = [:]
+
 // open hipo file
 detectors.each{ det ->
   def inTdir = new TDirectory()
@@ -113,7 +161,6 @@ detectors.each{ det ->
     if(obj.contains("/grA_PID")) { userPIDList.add(obj.tokenize('_')[1].split('PID')[1].toInteger()) }
   } //NOTE: PID[Lund pid] should be second, check qaPlot.groovy
   if (userPIDList.size()==0) userPIDList = [0] // for particle specific "detectors" like 'eCFD/eFD'
-  println "userPIDList = ${userPIDList}"
   userPIDList.unique()//IMPORTANT!
   userPIDList.each{ pid ->
 
@@ -141,21 +188,20 @@ detectors.each{ det ->
 
     // initialize sector branches
     sectors.each{ 
-      ratioTree.put(sec(it),[:])
-      cutTree.put(sec(it),[:])
-      epochPlotTree.put(sec(it),[:])
+      ratioTree.put((hasSectors ? sec(it) : it),[:])
+      cutTree.put((hasSectors ? sec(it) : it),[:])
+      epochPlotTree.put((hasSectors ? sec(it) : it),[:])
     }
 
     // loop over 'grA' graphs (of N/F vs. filenum), filling ratioTree leaves
     def (minA,maxA) = [100000,0]
     inList.each { obj ->
       if(obj.contains("/grA_") && (pid!=0 ? obj.contains("PID${pid}") : true)) { //TODO: Could make this nicer...
-
         // get runnum and sector
         runnum = 0; sector = 0;
         if (hasSectors) (runnum,sector) = obj.tokenize('_')[-2..-1].collect{ it.toInteger() } //NOTE: check qaPlot.groovy, runnum and sector (if applicable) should always be last in naming
-        else runnum = obj.tokenize('_')[-1].toInteger(); sector = 1;
-        if(sector<1||sector>6) throw new Exception("bad sector number $sector")
+        else { runnum = obj.tokenize('_')[-1].toInteger(); sector = 0; } //NOTE: Curly braces are important
+        if(sector<0||sector>6) throw new Exception("bad sector number $sector")
 
         // get epoch num, then initialize epoch branch if needed
         epoch = getEpoch(runnum,sector)
@@ -179,7 +225,6 @@ detectors.each{ det ->
     }
     //println T.pPrint(ratioTree)
 
-
     // subroutine for calculating median of a list
     def median = { d ->
       if(d.size()==0) {
@@ -198,7 +243,8 @@ detectors.each{ det ->
     def cutFactor = 4.0 //cutFactors[det][pid]!=null ? cutFactors[det][pid] : 4.0
     def mq,lq,uq,iqr,cutLo,cutHi
     sectors.each { s ->
-      sectorIt = sec(s)
+
+      sectorIt = (hasSectors ? sec(s) : s)
       ratioTree[sectorIt].each { epochIt,ratioList ->
 
         mq = median(ratioList) // middle quartile
@@ -220,7 +266,6 @@ detectors.each{ det ->
     }
     //jPrint("cuts.${dataset}.json",cutTree) // output cutTree to JSON
     //println T.pPrint(cutTree)
-
 
     // vars and subroutines for splitting graphs into "good" and "bad", 
     // i.e., "pass QA cuts" and "outside QA cuts", respectively
@@ -249,8 +294,6 @@ detectors.each{ det ->
       gB.setMarkerColor(2)
       return [gG,gB]
     }
-      
-
 
     // define 'epoch plots', which are time-ordered concatenations of all the plots, 
     // and put them in the epochPlotTree
@@ -270,7 +313,7 @@ detectors.each{ det ->
     def particleT = "${det} ${pidMap[pid][0]}"
     if (det.startsWith('e')) particleT = !hasSectors ? "Forward Tagger Electron" : "Trigger Electron"
     sectors.each { s ->
-      sectorIt = sec(s)
+      sectorIt = (hasSectors ? sec(s) : s)
       ratioTree[sectorIt].each { epochIt,ratioList ->
         insertEpochPlot(epochPlotTree[sectorIt][epochIt],
           "grA",defineEpochPlot("grA_epoch","${particleT} N/F",sectorIt,epochIt))
@@ -293,17 +336,6 @@ detectors.each{ det ->
     def outHipoSigmaN = new TDirectory()
     def outHipoSigmaF = new TDirectory()
     def outHipoRhoNF = new TDirectory()
-
-    // define qaTree
-    def qaTree // [runnum][filenum] -> defects enumeration
-    def slurper
-    def jsonFile
-    if(qaBit>=0) {
-      slurper = new JsonSlurper()
-      jsonFile = new File("QA/qa.${dataset}/qaTree.json")
-      qaTree = slurper.parse(jsonFile)
-    }
-    else qaTree = [:]
 
     // define QA timeline title and name
     def qaTitle, qaName
@@ -357,7 +389,6 @@ detectors.each{ det ->
       sectors.each{ TLqaEpochs.addPoint(sec(it),1.0,0,0) }
     }
 
-
     // other subroutines
     def lineMedian, lineCutLo, lineCutHi
     def elineMedian, elineCutLo, elineCutHi
@@ -386,7 +417,6 @@ detectors.each{ det ->
       )
     }
 
-
     // subroutine for projecting a graph onto the y-axis as a histogram
     def buildHisto = { graph,nbins,binmin,binmax ->
 
@@ -409,7 +439,6 @@ detectors.each{ det ->
       graph.getDataSize(0).times { i -> hist.fill(graph.getDataY(i)) }
       return hist
     }
-
 
     // subroutines for calculating means and variances of lists
     def listMean = { valList, wgtList ->
@@ -434,7 +463,6 @@ detectors.each{ det ->
       return listCovar(valList,valList,wgtList,mu,mu)
     }
 
-      
     // subroutine to convert a graph into a list of values
     def listA, listN, listF, listT, listOne, listWgt
     def graph2list = { graph ->
@@ -459,12 +487,12 @@ detectors.each{ det ->
         // get runnum, sector, epoch
         runnum = 0; sector = 0;
         if (hasSectors) (runnum,sector) = obj.tokenize('_')[-2..-1].collect{ it.toInteger() }
-        else runnum = obj.tokenize('_')[-1].toInteger(); sector = 1;
+        else { runnum = obj.tokenize('_')[-1].toInteger(); sector = 0; } //NOTE: Curly braces are important here.
         epoch = getEpoch(runnum,sector)
         if(qaBit<0 && !qaTree.containsKey(runnum)) qaTree[runnum] = [:]
 
         // if using the FT, only loop over sector 1 (no sectors-dependence for FT)
-        if( hasSectors || (!hasSectors && sector==1)) {
+        if( hasSectors || (!hasSectors && sector==0)) {
 
           // get all the graphs and convert to value lists
           grA = inTdir.getObject(obj)
@@ -522,7 +550,6 @@ detectors.each{ det ->
               )
             )
           }
-              
 
           // split graphs into good and bad
           (grA_good,grA_bad) = splitGraph(grA)
@@ -545,7 +572,25 @@ detectors.each{ det ->
                 qaTree[runnum][filenum]['evnumMax'] = evnumTree[runnum][filenum]['evnumMax']
                 qaTree[runnum][filenum]['comment'] = ""
                 qaTree[runnum][filenum]['defect'] = 0
+                qaTree[runnum][filenum]['livetime'] = 0//TODO: Added
                 qaTree[runnum][filenum]['sectorDefects'] = sectors.collectEntries{s->[sec(s),[]]}
+                qaTree[runnum][filenum]['defects'] = []
+              }
+              if (!qaTree[runnum][filenum].containsKey(det)) {
+                qaTree[runnum][filenum][det] = [:]
+                qaTree[runnum][filenum][det]['defect'] = 0
+              }
+              if (!qaTree[runnum][filenum][det].containsKey(pid)) {
+                qaTree[runnum][filenum][det][pid] = [:]
+                qaTree[runnum][filenum][det][pid]['evnumMin'] = evnumTree[runnum][filenum]['evnumMin']
+                qaTree[runnum][filenum][det][pid]['evnumMax'] = evnumTree[runnum][filenum]['evnumMax']
+                qaTree[runnum][filenum][det][pid]['comment'] = ""
+                qaTree[runnum][filenum][det][pid]['defect'] = 0
+                if (hasSectors) {
+                  qaTree[runnum][filenum][det][pid]['sectorDefects'] = sectors.collectEntries{s->[sec(s),0]}//TODO: Change to zero from empty list
+                } else { 
+                  qaTree[runnum][filenum][det][pid]['defects'] = []
+                }
               }
 
               // get variables needed for checking for defects
@@ -568,16 +613,42 @@ detectors.each{ det ->
                 }
               }
               // set FC bit
-              if( LT<0.9 ) defectList.add(T.bit("LowLiveTime"))
+              def livetime_defect = 0
+              if( LT<0.9 ) {
+                qaTree[runnum][filenum]['defects'].add(T.bit("LowLiveTime"))
+                qaTree[runnum][filenum][det][pid]['defects'].add(T.bit("LowLiveTime"))
+                livetime_defect = (Integer)T.bit("LowLiveTime")
+                qaTree[runnum][filenum]['livetime'] = livetime_defect//TODO: Added
+              }
 
               // insert in qaTree
-              qaTree[runnum][filenum]['sectorDefects'][sector] = defectList.collect()
+              def evmin = evnumTree[runnum][filenum]['evnumMin']
+              def evmax = evnumTree[runnum][filenum]['evnumMax']
+              def defects = ( defectList.size()==0 ? 0 : defectList.sum() ) //.collect{2**it} //NOTE: Currently defectList should only have one entry
+              if (hasSectors) {
+                qaTree[runnum][filenum][det][pid]['sectorDefects'][sector] = defectList.collect()
+                if (qaTree[runnum][filenum][det][pid]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det][pid]['defect'] = 1 }
+                if (qaTree[runnum][filenum][det]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det]['defect'] = 1 }
+                if (qaTree[runnum][filenum]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum]['defect'] = 1 }
+                db.add(id:id,run:runnum,filenum:filenum,evmin:evmin,evmax:evmax,livetime:livetime_defect,
+                  detector:det,pid:pid,defect:0,sector:sector,sectordefect:defects,comment:"")
+                id++
+              } else {
+                qaTree[runnum][filenum][det][pid]['defects'] = defectList.collect()
+                if (qaTree[runnum][filenum][det][pid]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det][pid]['defect'] = 1 }
+                if (qaTree[runnum][filenum][det]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det]['defect'] = 1 }
+                if (qaTree[runnum][filenum]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum]['defect'] = 1 }
+                db.add(id:id,run:runnum,filenum:filenum,evmin:evmin,evmax:evmax,livetime:livetime_defect,
+                detector:det,pid:pid,defect:defects,sector:sector,sectordefect:0,comment:"")
+                id++
+              }
+
               badfile = defectList.size() > 0
             }
             else {
               // lookup defectList for this sector
               if(qaBit==100) { // bad if not perfect
-                badfile = qaTree["$runnum"]["$filenum"]['sectorDefects']["$sector"].size() > 0
+                badfile = qaTree["$runnum"]["$filenum"]['sectorDefects']["$sector"].size() > 0 //TODO: Update this...
               } else { // bad only if defectList includes qaBit
                 if(qaTree["$runnum"]["$filenum"]['sectorDefects']["$sector"].size()>0) {
                   badfile = qaBit in qaTree["$runnum"]["$filenum"]['sectorDefects']["$sector"]
@@ -652,7 +723,6 @@ detectors.each{ det ->
       }
     }
 
-
     // assign defect masks
     qaTree.each { qaRun, qaRunTree -> 
       qaRunTree.each { qaFile, qaFileTree ->
@@ -666,10 +736,9 @@ detectors.each{ det ->
       }
     }
 
-
     // write epoch plots to hipo file
     sectors.each { s ->
-      sectorIt = sec(s)
+      sectorIt = (hasSectors ? sec(s) : s)
 
       if( hasSectors || (!hasSectors && sectorIt==1)) {
         outHipoEpochs.mkdir("/${sectorIt}")
@@ -733,24 +802,14 @@ detectors.each{ det ->
     if(outHipoEpochsFile.exists()) outHipoEpochsFile.delete()
     outHipoEpochs.writeFile(outHipoName)
 
-
-    // sort qaTree and output to json file
-    //println T.pPrint(qaTree)
-    qaTree.each { qaRun, qaRunTree -> qaRunTree.sort{it.key.toInteger()} }
-    qaTree.sort()
-    //TODO: Modify naming scheme
-    new File("outdat.${dataset}/qaTree.${det}"+(det.startsWith('e') ? "" : ".${pid}")+".json").write(JsonOutput.toJson(qaTree))
-
     // print total QA passing fractions
     def PF = nGoodTotal / (nGoodTotal+nBadTotal)
     def FF = 1-PF
-    //TODO: Modified printout to include PID and detector info
     if(qaBit<0) {
       println "\nQA cut overall passing fraction for detector ${det} and PID ${pid}: $PF";
       passingFractions[det][pid] = "$PF"
     }
     else {
-      //TODO: Modified naming scheme
       def PFfile = new File("outdat.${dataset}/passFractions${det}"+(det.startsWith('e') ? "" : "_PID${pid}")+".dat")
       def PFfileWriter = PFfile.newWriter(qaBit>0?true:false)
       def PFstr = qaBit==100 ? "Fraction of golden files (no defects): $PF" :
@@ -761,6 +820,12 @@ detectors.each{ det ->
   } //userPIDList.each
 }//detectors.each
 
+// sort qaTree and output to json file
+//println T.pPrint(qaTree)
+qaTree.each { qaRun, qaRunTree -> qaRunTree.sort{it.key.toInteger()} }
+qaTree.sort()
+new File("outdat.${dataset}/qaTree.json").write(JsonOutput.toJson(qaTree))
+
 // Print out files fractions passed by pid/detector
 def header = ["Detector","PID","# Files passing"]; printf(sprintf(' %1$-10s %2$-10s %3$-10s\n', header))
 println " ---------------------------------------------------------------------------- "
@@ -768,4 +833,3 @@ for (det in passingFractions.keySet()) { for (pid in passingFractions[det].keySe
     def row = [det, (det.startsWith('e') ? 11 : Integer.toString(pid)), passingFractions[det][pid]];
     printf(sprintf(' %1$-10s %2$-10s %3$-10s\n', row))
 } }
-
