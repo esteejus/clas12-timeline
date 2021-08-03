@@ -33,7 +33,7 @@ try { sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
 }
 def db
 def qaTree = [:]
-try {  sql.eachRow("select * from "+dataset) {
+try {  sql.eachRow("select * from "+dataset) { //TODO: Check for relevant column entries?   Also since you can have loss bit and 1/3 outlier bits need to convert back to lists...
 
     // Check entries
     if (!qaTree.keySet().contains(it.run)) { qaTree[it.run] = [:] }
