@@ -36,6 +36,12 @@ Data monitoring tools for CLAS Quality Assurance (QA)
    * alternatively, you can make symlinks
 
 ## PASS1 Procedure for Automatic QA
+* prepare run-group dependent settings in `monitorRead.groovy`
+  * guess `helFlip`; you can only know if your guess is correct after timelines
+    have been produced
+  * obtain the beam energies from the `RCDB`; CAUTION: sometimes the `RCDB` is 
+    wrong, and it is good to ask for the correct beam energy from the run group
+  * set `FCmode`
 * `exeSlurm.sh $dataset`: runs `monitorRead.groovy` on DSTs using slurm
   * `$dataset` is specified in `datasetList.txt`, along with a range of runs
     * the syntax of this file is `$dataset $firstRun $lastRun`
@@ -44,9 +50,6 @@ Data monitoring tools for CLAS Quality Assurance (QA)
       * for scripts which loop over all datasets, you can restrict them by
         commenting out lines in `datasetList.txt` (using `#`); currently
         there are no such scripts in use
-  * you may need to edit `$datadir` to specify the location of DST files
-    * by default, it is `../pass1.${dataset}`, which should be a symlink
-      to the appropriate DST directory
   * wait for slurm jobs to finish
   * execute `errorPrint.sh` to inspect error logs
   * `exeSlurm.sh` also has the ability to read files from the tape silo; however, while
@@ -276,9 +279,12 @@ the timelines and recording features not identified by the automatic QA in
     will be printed, and it is recommended to re-run the automatic QA, either for
     those specific runs, or in its entirety
 * `cd QA`; this subdirectory contains code for the "manual QA"
-* `import.sh [dataset]` to import the automatically generated `qaTree.json`
-  * by default, this is in `../outdat.${dataset}/qaTree.json`
-  * you can also specify a path to a specific `qaTree.json` file; this is 
+* `import.sh [dataset]` to import the automatically generated `qaTree.json`; this
+  will also generate a human-readable file, `qa/qaTable.dat`  
+  * append the option `-cnds=user_comment` to copy the user comment from RCDB
+    to `qa/qaTable.dat`, which is helpful for the manual QA procedure
+  * by default, the `json` file is in `../outdat.${dataset}/qaTree.json`;
+    you can also specify a path to a specific `qaTree.json` file; this is 
     useful if you have a more up-to-date version somewhere else, and you
     want to use the tools in this QA directory to make revisions
 * open `qa/qaTable.dat` in another window; this is the human-readable version of

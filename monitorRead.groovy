@@ -74,24 +74,27 @@ if(runnum>=4763 && runnum<=5001) RG="RGA" // early period
 else if(runnum>=5032 && runnum<=5262) RG="RGA" // inbending1
 else if(runnum>=5300 && runnum<=5666) RG="RGA" // inbending1 + outbending
 else if(runnum>=5674 && runnum<=6000) RG="RGK" // 6.5+7.5 GeV
-else if(runnum>=6120 && runnum<=6604) RG="RGB" // spring
+else if(runnum>=6120 && runnum<=6604) RG="RGB" // spring 19
 else if(runnum>=6616 && runnum<=6783) RG="RGA" // spring 19
-else if(runnum>=11093 && runnum<=11300) RG="RGB" // fall
-else if(runnum>=11323 && runnum<=11571) RG="RGB" // winter
+else if(runnum>=11093 && runnum<=11300) RG="RGB" // fall 19
+else if(runnum>=11323 && runnum<=11571) RG="RGB" // winter 20
+else if(runnum>=12210 && runnum<=12951) RG="RGF" // spring+summer 20
 else System.err << "WARNING: unknown run group; using default run-group-dependent settings (see monitorRead.groovy)\n"
 println "rungroup = $RG"
 
 // helFlip: if true, REC::Event.helicity has opposite sign from reality
 def helFlip = false
 if(RG=="RGA") helFlip = true
-if(RG=="RGB") {
+else if(RG=="RGB") {
   helFlip = true
   if(runnum>=11093 && runnum<=11283) helFlip = false // fall, 10.4 GeV period only
   else if(runnum>=11323 && runnum<=11571) helFlip = false // winter
 };
-if(RG=="RGK") helFlip = false
+else if(RG=="RGK") helFlip = false
+else if(RG=="RGF") helFlip = true
 
-// beam energy // TODO: get this from EPICS instead
+// beam energy
+// - hard-coded; could instead get from RCDB, but sometimes it is incorrect
 def EBEAM = 10.6041 // RGA default
 if(RG=="RGA") {
   if(runnum>=6616 && runnum<=6783) EBEAM = 10.1998 // spring 19
@@ -110,6 +113,12 @@ else if(RG=="RGK") {
   else if(runnum>=5875 && runnum<=6000) EBEAM = 6.535
   else System.err << "ERROR: unknown beam energy\n"
 }
+else if(RG=="RGF") {
+  if     (runnum>=12210 && runnum<=12388) EBEAM = 10.389 // RCDB may still be incorrect
+  else if(runnum>=12389 && runnum<=12443) EBEAM =  2.186 // RCDB may still be incorrect
+  else if(runnum>=12444 && runnum<=12951) EBEAM = 10.389 // RCDB may still be incorrect
+  else System.err << "ERROR: unknown beam energy\n"
+}
 
 // gated FC charge determination
 // - 0: use workaround method: ungated FC charge * average livetime
@@ -124,11 +133,12 @@ if(RG=="RGA") {
     if(runnum==6724) FCmode=0; // fcupgated charge spike in file 230
   };
 }
-if(RG=="RGB") {
+else if(RG=="RGB") {
   FCmode = 1 // default
   if( runnum in [6263, 6350, 6599, 6601, 11119] ) FCmode=0 // fcupgated charge spikes
 }
-if(RG=="RGK") FCmode = 0
+else if(RG=="RGK") FCmode = 0
+else if(RG=="RGF") FCmode = 0
 
 // FC attenuation fix
 // RGB runs <6400 had wrong attenuation, need to use

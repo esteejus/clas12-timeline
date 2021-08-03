@@ -281,16 +281,32 @@ else if( cmd=="custom") {
   // this cmd is useful if you want to do a specific action, while
   // calling this groovy script from another program
   def rnum,fnum
+
+  // arguments
+  /* // [runnum] [filenum]
   if(args.length==3) {
     rnum = args[1].toInteger()
     fnum = args[2].toInteger()
+  } else return
+  */
+  ///* // [runnum]; loop over files
+  if(args.length==2) {
+    rnum = args[1].toInteger()
+  } else return
+  //*/
+
+  qaTree["$rnum"].each { k,v -> fnum = k.toInteger() // loop over files
 
     def secList = (1..6).collect{it}
     secList.each{ 
-      qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] += T.bit("Misc")
+      qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] += T.bit("Misc") // add bit
+      //qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] = [T.bit("Misc")] // set bit
+      qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] -= T.bit("TotalOutlier") // delete bit
+      qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] -= T.bit("TerminalOutlier") // delete bit
+      qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] -= T.bit("MarginalOutlier") // delete bit
     }
 
-    def cmt = "ungated FC charge spike"
+    def cmt = "setup period; possible beam modulation issues"
     if(!qaTree["$rnum"]["$fnum"].containsKey("comment")) {
       qaTree["$rnum"]["$fnum"]["comment"] = cmt
     }
@@ -299,10 +315,11 @@ else if( cmd=="custom") {
         qaTree["$rnum"]["$fnum"]["comment"] += "; "
       qaTree["$rnum"]["$fnum"]["comment"] += cmt
     }
+    println("modify $rnum $fnum")
 
     recomputeDefMask(rnum,fnum)
 
-  }
+  } // end loop over files
 }
 
 

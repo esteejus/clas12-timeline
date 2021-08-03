@@ -87,22 +87,33 @@ void readTree(TString dataset="fall18") {
 
 
   // draw everything
+  gStyle->SetPalette(kBrownCyan);
+  TH2D * h[6];
+  TProfile * hp[6];
   TCanvas * c[6];
-  TString cN,cut,rundrawNF,rundrawF;
+  TString hN,cN,cut,rundrawNF,rundrawF;
   for(int s=0; s<6; s++) {
-    cN = Form("sector%d",s+1);
+
+    hN = Form("sector%d",s+1);
+    h[s] = new TH2D(hN,hN+" N/F vs. runnum;runnum;N/F",
+      maxRun-minRun, minRun, maxRun, NBINS, minNF, maxNF );
     cut = Form("sector==%d && fcstop-fcstart>0",s+1);
-    rundrawNF = Form("nElec/(fcstop-fcstart):runnum>>rNF%d(%d,%d,%d,%d,%f,%f)",
-      s+1, maxRun-minRun, minRun, maxRun, NBINS, minNF, maxNF );
-    rundrawF = Form("fcstop-fcstart:runnum>>rF%d(%d,%d,%d,%d,%f,%f)",
-      s+1, maxRun-minRun, minRun, maxRun, 300, minF, maxF );
+    rundrawNF = "nElec/(fcstop-fcstart):runnum";
+    rundrawF = "fcstop-fcstart:runnum";
+
+    cN = hN+"canv";
     c[s] = new TCanvas(cN,cN,800,800);
 
     ///*
     c[s]->SetGrid(1,1);
-    tr->Draw(rundrawNF,cut,"colz");
-    //c[s]->SetLogz();
+    tr->Project(hN,rundrawNF,cut);
+    h[s]->Draw("colz");
+    hp[s] = h[s]->ProfileX();
+    hp[s]->SetLineColor(kRed);
+    hp[s]->SetLineWidth(5);
+    hp[s]->Draw("same");
     for(int k=0; k<n; k++) for(int j=0; j<2; j++) eLine[j][k]->Draw("same");
+    //c[s]->SetLogz();
     //*/
 
     /*
