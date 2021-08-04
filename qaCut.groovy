@@ -208,7 +208,7 @@ detectors.each{ det ->
         cutLo = lq - cutFactor * iqr // lower QA cut boundary
         cutHi = uq + cutFactor * iqr // upper QA cut boundary
 
-        if(!hasSectors) cutLo = lq - 2 * cutFactor * iqr // override FT low cut to be lower
+        if(!hasSectors) cutLo = lq - 1 * cutFactor * iqr // override FT low cut to be lower //TODO: Updated 8/4/21 for merge with FT/Master
         
         cutTree[sectorIt][epochIt]['mq'] = mq
         cutTree[sectorIt][epochIt]['lq'] = lq

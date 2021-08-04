@@ -36,6 +36,7 @@ if(args.length>=2) inHipoType = args[1]
 //TODO: Added command line options to modify list of particles to count
 if(args.length>=3 && args[2].startsWith("-ps=")) particles = args[2].split('=')[1].split(',')
 if(args.length>=3 && args[2].startsWith("-addPs=")) particles.addAll(arg.split('=')[1].split(','))
+particles = particles.collect{ el -> el.toInteger() } // Argument values are strings!
 particles.unique() // Make sure you don't have multiple identical entries
 
 // get hipo file names
