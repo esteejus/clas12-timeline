@@ -75,7 +75,6 @@ def getEpochBounds = { e ->
   }
 }
 
-
 // build map of (runnum,filenum) -> (evnumMin,evnumMax)
 def dataFile = new File("outdat.${dataset}/data_table.dat")
 def tok
@@ -112,9 +111,9 @@ detectors.each{ det ->
   if (!det.startsWith('e')) inList.each { obj -> //TODO Think about what this does with FC and LT graphs...
     if(obj.contains("/grA_PID")) { userPIDList.add(obj.tokenize('_')[1].split('PID')[1].toInteger()) }
   } //NOTE: PID[Lund pid] should be second, check qaPlot.groovy
-  if (userPIDList.size()==0) userPIDList = [0] // for particle specific "detectors" like 'eCFD/eFD'
-  println "userPIDList = ${userPIDList}"
+  if (userPIDList.size()==0) { userPIDList = [0] } // for particle specific "detectors" like 'eCFD/eFT'
   userPIDList.unique()//IMPORTANT!
+  println "userPIDList = ${userPIDList}"
   userPIDList.each{ pid ->
 
     // define 'ratioTree', a tree with the following structure
@@ -154,7 +153,7 @@ detectors.each{ det ->
         // get runnum and sector
         runnum = 0; sector = 0;
         if (hasSectors) (runnum,sector) = obj.tokenize('_')[-2..-1].collect{ it.toInteger() } //NOTE: check qaPlot.groovy, runnum and sector (if applicable) should always be last in naming
-        else runnum = obj.tokenize('_')[-1].toInteger(); sector = 1;
+        else { runnum = obj.tokenize('_')[-1].toInteger(); sector = 1; }
         if(sector<1||sector>6) throw new Exception("bad sector number $sector")
 
         // get epoch num, then initialize epoch branch if needed
@@ -178,7 +177,6 @@ detectors.each{ det ->
       }
     }
     //println T.pPrint(ratioTree)
-
 
     // subroutine for calculating median of a list
     def median = { d ->
@@ -221,7 +219,6 @@ detectors.each{ det ->
     //jPrint("cuts.${dataset}.json",cutTree) // output cutTree to JSON
     //println T.pPrint(cutTree)
 
-
     // vars and subroutines for splitting graphs into "good" and "bad", 
     // i.e., "pass QA cuts" and "outside QA cuts", respectively
     def grA,grA_good,grA_bad
@@ -249,8 +246,6 @@ detectors.each{ det ->
       gB.setMarkerColor(2)
       return [gG,gB]
     }
-      
-
 
     // define 'epoch plots', which are time-ordered concatenations of all the plots, 
     // and put them in the epochPlotTree
@@ -324,8 +319,8 @@ detectors.each{ det ->
     // define timeline graphs
     def defineTimeline = { title,ytitle,name ->
       sectors.collect { s ->
-        if( hasSectors || (!hasSectors && s==0) ) {
-          def gN = !hasSectors ? "${name}_${det}_${pid}" : "${name}_${det}_${pid}_sector_"+sec(s)
+        if( (hasSectors && !(name == "F" || name == "LT")) || ( (name == "F" || name == "LT" || !hasSectors) && s==0 ) ) {//TODO: Modified condition
+          def gN = !hasSectors ? "${name}_${det}_${pid}" : "${name}_${det}_${pid}_sector"+sec(s)
           gN = (name == "F" || name == "LT") ? "${name}" : gN
           def g = new GraphErrors(gN)
           g.setTitle(title)
@@ -357,7 +352,6 @@ detectors.each{ det ->
       sectors.each{ TLqaEpochs.addPoint(sec(it),1.0,0,0) }
     }
 
-
     // other subroutines
     def lineMedian, lineCutLo, lineCutHi
     def elineMedian, elineCutLo, elineCutHi
@@ -386,7 +380,6 @@ detectors.each{ det ->
       )
     }
 
-
     // subroutine for projecting a graph onto the y-axis as a histogram
     def buildHisto = { graph,nbins,binmin,binmax ->
 
@@ -409,7 +402,6 @@ detectors.each{ det ->
       graph.getDataSize(0).times { i -> hist.fill(graph.getDataY(i)) }
       return hist
     }
-
 
     // subroutines for calculating means and variances of lists
     def listMean = { valList, wgtList ->
@@ -434,7 +426,6 @@ detectors.each{ det ->
       return listCovar(valList,valList,wgtList,mu,mu)
     }
 
-      
     // subroutine to convert a graph into a list of values
     def listA, listN, listF, listT, listOne, listWgt
     def graph2list = { graph ->
@@ -459,7 +450,7 @@ detectors.each{ det ->
         // get runnum, sector, epoch
         runnum = 0; sector = 0;
         if (hasSectors) (runnum,sector) = obj.tokenize('_')[-2..-1].collect{ it.toInteger() }
-        else runnum = obj.tokenize('_')[-1].toInteger(); sector = 1;
+        else { runnum = obj.tokenize('_')[-1].toInteger(); sector = 1; }
         epoch = getEpoch(runnum,sector)
         if(qaBit<0 && !qaTree.containsKey(runnum)) qaTree[runnum] = [:]
 
@@ -641,17 +632,17 @@ detectors.each{ det ->
             nGood+nBad>0 ? nBad/(nGood+nBad) : 0,
             0,0
           )
+
           TLA[sector-1].addPoint(runnum,totA,0,0)
           TLN[sector-1].addPoint(runnum,totN,0,0)
-          TLF[sector-1].addPoint(runnum,totFacc[sector-1],0,0)
-          TLT[sector-1].addPoint(runnum,totT,0,0)
+          if (sector==1) TLF[0].addPoint(runnum,totFacc[sector-1],0,0)
+          if (sector==1) TLT[0].addPoint(runnum,totT,0,0)
           TLsigmaN[sector-1].addPoint(runnum,reluncN,0,0)
           TLsigmaF[sector-1].addPoint(runnum,reluncF,0,0)
           TLrhoNF[sector-1].addPoint(runnum,corrNF,0,0)
         }
       }
     }
-
 
     // assign defect masks
     qaTree.each { qaRun, qaRunTree -> 
@@ -665,7 +656,6 @@ detectors.each{ det ->
         qaTree[qaRun][qaFile]["defect"] = defMask
       }
     }
-
 
     // write epoch plots to hipo file
     sectors.each { s ->
@@ -733,7 +723,6 @@ detectors.each{ det ->
     if(outHipoEpochsFile.exists()) outHipoEpochsFile.delete()
     outHipoEpochs.writeFile(outHipoName)
 
-
     // sort qaTree and output to json file
     //println T.pPrint(qaTree)
     qaTree.each { qaRun, qaRunTree -> qaRunTree.sort{it.key.toInteger()} }
@@ -768,4 +757,3 @@ for (det in passingFractions.keySet()) { for (pid in passingFractions[det].keySe
     def row = [det, (det.startsWith('e') ? 11 : Integer.toString(pid)), passingFractions[det][pid]];
     printf(sprintf(' %1$-10s %2$-10s %3$-10s\n', row))
 } }
-
