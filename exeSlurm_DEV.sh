@@ -40,10 +40,10 @@ for rundir in `ls -d ${datadir}/*/ | sed 's/\/$//'`; do
     if [ $usetape -eq 1 ]; then
       scratchdir="/scratch/slurm/$(whoami)/${run}"
       cmd="mkdir -P $scratchdir && jget ${rundir}/* ${scratchdir}/"
-      cmd="$cmd && $CLASQA/run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $scratchdir dst"
+      cmd="$cmd && run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $scratchdir dst"
       cmd="$cmd && rm -r $scratchdir"
     else
-      cmd="$CLASQA/run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $rundir dst"
+      cmd="$CLASQA/run-groovy $CLASQA_JAVA_OPTS  monitorReadNEWEST.groovy $rundir dst"
     fi
     echo "$cmd" >> $joblist
     rm -v outdat/*${run}.dat
@@ -64,8 +64,8 @@ app "#SBATCH --job-name=clasqa"
 app "#SBATCH --account=clas12"
 app "#SBATCH --partition=production"
 
-app "#SBATCH --cpus-per-task=2"
 app "#SBATCH --mem-per-cpu=4000"
+app "#SBATCH --cpus-per-task=2"
 app "#SBATCH --time=24:00:00"
 
 app "#SBATCH --array=1-$(cat $joblist | wc -l)"
@@ -86,6 +86,5 @@ echo "JOB DESCRIPTOR: $slurm"
 cat $slurm
 printf '%70s\n' | tr ' ' -
 echo "submitting to slurm..."
-touch jobnumber.${dataset}.slurm
-sbatch $slurm | grep -Eo '[0-9]{8}' >> jobnumber.${dataset}.slurm
+sbatch $slurm
 squeue -u `whoami`

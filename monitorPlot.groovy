@@ -414,8 +414,8 @@ T.exeLeaves(monTree,{
       }
       if(tlPath.contains('DIS')) tlT = "DIS kinematics"
       if(tlPath.contains('inclusive')) {
-        if(tlPath.contains('pip')) tlT = "inclusive pi+ kinematics"
-        if(tlPath.contains('pim')) tlT = "inclusive pi- kinematics"
+        if(tlPath.contains('pip')) tlT = "inclusive π+ kinematics"
+        if(tlPath.contains('pim')) tlT = "inclusive π- kinematics"
       }
       if(T.key.contains('Dist')) tlT = "average ${tlT}"
       tlT = "${tlT} vs. run number"
@@ -431,8 +431,8 @@ T.exeLeaves(monTree,{
         def tlT
         if(tlPath.contains('DIS')) tlT = "DIS kinematics"
         if(tlPath.contains('inclusive')) {
-          if(tlPath.contains('pip')) tlT = "inclusive pi+ kinematics"
-          if(tlPath.contains('pim')) tlT = "inclusive pi- kinematics"
+          if(tlPath.contains('pip')) tlT = "inclusive π+ kinematics"
+          if(tlPath.contains('pim')) tlT = "inclusive π- kinematics"
         }
         if(T.key.contains('Dist')) tlT = "standard deviation of ${tlT}"
         tlT = "${tlT} vs. run number"

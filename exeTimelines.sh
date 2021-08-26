@@ -28,9 +28,9 @@ exe run-groovy $CLASQA_JAVA_OPTS buildChargeTree.groovy $dataset
 # trigger electrons monitor
 exe run-groovy $CLASQA_JAVA_OPTS qaPlot.groovy $dataset
 exe run-groovy $CLASQA_JAVA_OPTS qaCut.groovy $dataset
-# FT electrons
-exe run-groovy $CLASQA_JAVA_OPTS qaPlot.groovy $dataset FT
-exe run-groovy $CLASQA_JAVA_OPTS qaCut.groovy $dataset FT
+# # FT electrons #NOTE: Commented out for development
+# exe run-groovy $CLASQA_JAVA_OPTS qaPlot.groovy $dataset FT
+# exe run-groovy $CLASQA_JAVA_OPTS qaCut.groovy $dataset FT
 # general monitor
 exe run-groovy $CLASQA_JAVA_OPTS monitorPlot.groovy $dataset
 # deploy timelines to dev www

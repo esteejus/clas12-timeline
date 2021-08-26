@@ -1,4 +1,4 @@
-/* create hipo file with plots of N, F, N/F, etc. vs. file number, for each run
+/* create hipo file with plots of N, F, N/F, etc. vs. file number, for each ru	n
  * - this starts to build the structure of the 'timeline' hipo file
  */
 
