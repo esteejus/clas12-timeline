@@ -24,3 +24,4 @@ monsub*/*
 QA/qa
 calib/datasetList.txt
 tmp
+*OLD_qaPlot.groovy

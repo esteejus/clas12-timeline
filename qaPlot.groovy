@@ -18,7 +18,7 @@ if(args.length>=2 && args[1].startsWith("-ds=")) {
   for (det in args[1].split('=')[1].split(',')) { detectors.add(det) }
 }
 if(args.length>=2 && args[1].startsWith("-addDs=")) { for (det in args[1].split('=')[1].split(',')) { detectors.add(det) } }
-detectors.unique() // Make sure you don't double count
+detectors.toUnique() // Make sure you don't double count, .toUnique() is for string lists!
 //----------------------------------------------------------------------------------
 
 // define vars and subroutines
@@ -168,7 +168,6 @@ dataFile.eachLine { line ->
 
       grF[detectors[it]] = defineGraph('_'+detectors[it],"grF","Faraday cup charge F [nC]") //NOTE: empty string detector argument means graph will be split into sectors
       grT[detectors[it]] = defineGraph('_'+detectors[it],"grT","Live Time")
-
       
       if (det.startsWith('e')) {
         grNP[det][pid_e] = [ defineGraph(det,"grA","${det[1..<det.size()]} DIS Electrons Normalized Yield N/F"),

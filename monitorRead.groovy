@@ -16,6 +16,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.lang.Math.*
 import Tools // (make sure `.` is in $CLASSPATH)
+import java.lang.management.* //TODO: added
 Tools T = new Tools()
 
 // OPTIONS
@@ -25,7 +26,6 @@ def inHipoType = "dst" // options: "dst", "skim"\
 //TODO: Added list of particle to count
 def particles = [211,-211,22] // options: -addPs=pid1,pid2,... adds to current list
                               //          -ps=pid1,pid2,... modifies current list
-
 
 // ARGUMENTS
 def inHipo = "skim/skim4_5052.hipo" // directory of DST files, or a single SKIM file
@@ -164,6 +164,13 @@ else if(RG=="RGF") FCmode = 0
 def datfile = new File("outdat/data_table_${runnum}.dat")
 def datfileWriter = datfile.newWriter(false)
 
+// //TODO: Added for JVM monitoring
+// "mkdir -p logs".execute()
+// def logfile = new File("logs/jvm_log_${runnum}.dat")
+// def logfileWriter = logfile.newWriter(false)
+// logfileWriter.close() //NOTE: Overwrites existing log file
+// def logcounter = 0
+
 
 // property lists
 def partList = [ 'pip', 'pim' ]
@@ -279,6 +286,18 @@ def countEvent
 def caseCountNtrigGT1 = 0
 def caseCountNFTwithTrig = 0
 def nElecTotal
+
+//DEBUGGING: Moving stuff around
+// subroutine to write out to hipo file
+def outHipo = new TDirectory()
+outHipo.mkdir("/$runnum")
+outHipo.cd("/$runnum")
+
+//----------------------
+// event loop
+//----------------------
+evCount = 0
+inHipoList.each { inHipoFile ->
 
 //TODO: Added
 def particle = [:]
@@ -661,10 +680,10 @@ def fillHistos = { list, partN ->
   }
 }
 
-// subroutine to write out to hipo file
-def outHipo = new TDirectory()
-outHipo.mkdir("/$runnum")
-outHipo.cd("/$runnum")
+// // subroutine to write out to hipo file
+// def outHipo = new TDirectory()
+// outHipo.mkdir("/$runnum")
+// outHipo.cd("/$runnum")
 def histN,histT
 def writeHistos = {
 
@@ -790,11 +809,14 @@ def writeHistos = {
   for (pid in particles) { nParticlesCD.put(pid,0); nParticlesFD.put(pid,sectors.collect{0}); nParticlesFT.put(pid,0) }
 }
 
-//----------------------
-// event loop
-//----------------------
-evCount = 0
-inHipoList.each { inHipoFile ->
+// //----------------------
+// // event loop
+// //----------------------
+// evCount = 0
+// inHipoList.each { inHipoFile ->
+
+  //TODO: added
+  // logfileWriter = logfile.newWriter(true) //NOTE: true means you are appending!
 
   // open skim/DST file
   reader = new HipoDataSource()
@@ -941,8 +963,26 @@ inHipoList.each { inHipoFile ->
     eventNum = BigInteger.valueOf(configBank.getInt('event',0))
     eventNumList.add(eventNum)
 
+    // //TODO: Added
+    // def mem = ManagementFactory.memoryMXBean
+    // def heapUsage = mem.heapMemoryUsage
+    // def nonHeapUsage = mem.nonHeapMemoryUsage
+    // def collectionTime = ManagementFactory.garbageCollectorMXBeans.collect{ gc -> gc.collectionTime }.sum()
+    // logfileWriter << [logcounter,heapUsage.used,nonHeapUsage.used,collectionTime].join(' ') << "\n"
+    // logcounter ++;
+
+    // Remove required banks
+    particleBank = null
+    eventBank = null
+    configBank = null
+    // Remove additional banks
+    FTparticleBank = null
+    calBank = null
+    scalerBank = null
+
   } // end event loop
   reader.close()
+  // logfileWriter.close()//TODO: Added
 
   // write histograms to hipo file, and then set them to null for garbage collection
   segmentTmp = segment
@@ -950,7 +990,31 @@ inHipoList.each { inHipoFile ->
 
   // close reader
   reader = null
-  System.gc()
+  // System.gc()
+
+  //TODO: Added
+  particle = null
+  pFound = null
+
+  //TODO: Added
+  pSec = null // just for FD currently...
+
+  //TODO: Added
+  nParticlesCD = null
+  nParticlesFD = null
+  nParticlesFT = null
+
+  //TODO: Added
+  pcaseCountNCDGT1 = null
+  pcaseCountNFDGT1 = null
+  pcaseCountNFT = null
+  npTotal = null
+
+  //TODO: Added
+  pInCD = null
+  pInFD = null
+  pInFT = null
+
 } // end loop over hipo files
 
 // write outHipo file
@@ -961,3 +1025,6 @@ outHipo.writeFile(outHipoN)
 if(inHipoType=="dst") datfileWriter.close()
 //TODO: Added for development purposes...
 else datfileWriter.close()
+
+// //TODO: added
+// logfileWriter.close()
