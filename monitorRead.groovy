@@ -16,7 +16,6 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.lang.Math.*
 import Tools // (make sure `.` is in $CLASSPATH)
-import java.lang.management.* //TODO: added
 Tools T = new Tools()
 
 // OPTIONS
@@ -164,19 +163,10 @@ else if(RG=="RGF") FCmode = 0
 def datfile = new File("outdat/data_table_${runnum}.dat")
 def datfileWriter = datfile.newWriter(false)
 
-// //TODO: Added for JVM monitoring
-// "mkdir -p logs".execute()
-// def logfile = new File("logs/jvm_log_${runnum}.dat")
-// def logfileWriter = logfile.newWriter(false)
-// logfileWriter.close() //NOTE: Overwrites existing log file
-// def logcounter = 0
-
-
 // property lists
 def partList = [ 'pip', 'pim' ]
 def helList = [ 'hp', 'hm' ]
 def heluList = [ 'hp', 'hm', 'hu' ]
-
 
 // build tree 'histTree', for storing histograms
 def histTree = [:]
@@ -815,9 +805,6 @@ def writeHistos = {
 // evCount = 0
 // inHipoList.each { inHipoFile ->
 
-  //TODO: added
-  // logfileWriter = logfile.newWriter(true) //NOTE: true means you are appending!
-
   // open skim/DST file
   reader = new HipoDataSource()
   reader.open(inHipoFile)
@@ -963,14 +950,6 @@ def writeHistos = {
     eventNum = BigInteger.valueOf(configBank.getInt('event',0))
     eventNumList.add(eventNum)
 
-    // //TODO: Added
-    // def mem = ManagementFactory.memoryMXBean
-    // def heapUsage = mem.heapMemoryUsage
-    // def nonHeapUsage = mem.nonHeapMemoryUsage
-    // def collectionTime = ManagementFactory.garbageCollectorMXBeans.collect{ gc -> gc.collectionTime }.sum()
-    // logfileWriter << [logcounter,heapUsage.used,nonHeapUsage.used,collectionTime].join(' ') << "\n"
-    // logcounter ++;
-
     // Remove required banks
     particleBank = null
     eventBank = null
@@ -982,7 +961,6 @@ def writeHistos = {
 
   } // end event loop
   reader.close()
-  // logfileWriter.close()//TODO: Added
 
   // write histograms to hipo file, and then set them to null for garbage collection
   segmentTmp = segment
@@ -1025,6 +1003,3 @@ outHipo.writeFile(outHipoN)
 if(inHipoType=="dst") datfileWriter.close()
 //TODO: Added for development purposes...
 else datfileWriter.close()
-
-// //TODO: added
-// logfileWriter.close()
