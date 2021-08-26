@@ -254,7 +254,7 @@ detectors.each{ det ->
         cutLo = lq - cutFactor * iqr // lower QA cut boundary
         cutHi = uq + cutFactor * iqr // upper QA cut boundary
 
-        if(!hasSectors) cutLo = lq - 2 * cutFactor * iqr // override FT low cut to be lower
+        if(!hasSectors) cutLo = lq - 1 * cutFactor * iqr // override FT low cut to be lower
         
         cutTree[sectorIt][epochIt]['mq'] = mq
         cutTree[sectorIt][epochIt]['lq'] = lq
@@ -356,7 +356,7 @@ detectors.each{ det ->
     // define timeline graphs
     def defineTimeline = { title,ytitle,name ->
       sectors.collect { s ->
-        if( hasSectors || (!hasSectors && s==0) ) {
+        if( (hasSectors && !(name == "F" || name == "LT")) || ( (name == "F" || name == "LT" || !hasSectors) && s==0 ) ) {//TODO: Modified condition
           def gN = !hasSectors ? "${name}_${det}_${pid}" : "${name}_${det}_${pid}_sector_"+sec(s)
           gN = (name == "F" || name == "LT") ? "${name}" : gN
           def g = new GraphErrors(gN)
@@ -714,8 +714,8 @@ detectors.each{ det ->
           )
           TLA[sector-1].addPoint(runnum,totA,0,0)
           TLN[sector-1].addPoint(runnum,totN,0,0)
-          TLF[sector-1].addPoint(runnum,totFacc[sector-1],0,0)
-          TLT[sector-1].addPoint(runnum,totT,0,0)
+          if (sector==0) TLF[0].addPoint(runnum,totFacc[sector-1],0,0)
+          if (sector==0) TLT[0].addPoint(runnum,totT,0,0)
           TLsigmaN[sector-1].addPoint(runnum,reluncN,0,0)
           TLsigmaF[sector-1].addPoint(runnum,reluncF,0,0)
           TLrhoNF[sector-1].addPoint(runnum,corrNF,0,0)

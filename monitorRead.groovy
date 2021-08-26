@@ -26,7 +26,6 @@ def inHipoType = "dst" // options: "dst", "skim"\
 def particles = [211,-211,22] // options: -addPs=pid1,pid2,... adds to current list
                               //          -ps=pid1,pid2,... modifies current list
 
-
 // ARGUMENTS
 def inHipo = "skim/skim4_5052.hipo" // directory of DST files, or a single SKIM file
 if(args.length==0) { println "Usage: run-groovy monitorRead.groovy [hipofile] [hipotype] [particle pidlist option]"; return;}
@@ -36,6 +35,7 @@ if(args.length>=2) inHipoType = args[1]
 //TODO: Added command line options to modify list of particles to count
 if(args.length>=3 && args[2].startsWith("-ps=")) particles = args[2].split('=')[1].split(',')
 if(args.length>=3 && args[2].startsWith("-addPs=")) particles.addAll(arg.split('=')[1].split(','))
+particles = particles.collect{ el -> el.toInteger() } // Argument values are strings!
 particles.unique() // Make sure you don't have multiple identical entries
 
 // get hipo file names
@@ -163,12 +163,10 @@ else if(RG=="RGF") FCmode = 0
 def datfile = new File("outdat/data_table_${runnum}.dat")
 def datfileWriter = datfile.newWriter(false)
 
-
 // property lists
 def partList = [ 'pip', 'pim' ]
 def helList = [ 'hp', 'hm' ]
 def heluList = [ 'hp', 'hm', 'hu' ]
-
 
 // build tree 'histTree', for storing histograms
 def histTree = [:]
@@ -278,6 +276,18 @@ def countEvent
 def caseCountNtrigGT1 = 0
 def caseCountNFTwithTrig = 0
 def nElecTotal
+
+//DEBUGGING: Moving stuff around
+// subroutine to write out to hipo file
+def outHipo = new TDirectory()
+outHipo.mkdir("/$runnum")
+outHipo.cd("/$runnum")
+
+//----------------------
+// event loop
+//----------------------
+evCount = 0
+inHipoList.each { inHipoFile ->
 
 //TODO: Added
 def particle = [:]
@@ -660,10 +670,10 @@ def fillHistos = { list, partN ->
   }
 }
 
-// subroutine to write out to hipo file
-def outHipo = new TDirectory()
-outHipo.mkdir("/$runnum")
-outHipo.cd("/$runnum")
+// // subroutine to write out to hipo file
+// def outHipo = new TDirectory()
+// outHipo.mkdir("/$runnum")
+// outHipo.cd("/$runnum")
 def histN,histT
 def writeHistos = {
 
@@ -789,11 +799,11 @@ def writeHistos = {
   for (pid in particles) { nParticlesCD.put(pid,0); nParticlesFD.put(pid,sectors.collect{0}); nParticlesFT.put(pid,0) }
 }
 
-//----------------------
-// event loop
-//----------------------
-evCount = 0
-inHipoList.each { inHipoFile ->
+// //----------------------
+// // event loop
+// //----------------------
+// evCount = 0
+// inHipoList.each { inHipoFile ->
 
   // open skim/DST file
   reader = new HipoDataSource()
@@ -940,6 +950,15 @@ inHipoList.each { inHipoFile ->
     eventNum = BigInteger.valueOf(configBank.getInt('event',0))
     eventNumList.add(eventNum)
 
+    // Remove required banks
+    particleBank = null
+    eventBank = null
+    configBank = null
+    // Remove additional banks
+    FTparticleBank = null
+    calBank = null
+    scalerBank = null
+
   } // end event loop
   reader.close()
 
@@ -949,7 +968,31 @@ inHipoList.each { inHipoFile ->
 
   // close reader
   reader = null
-  System.gc()
+  // System.gc()
+
+  //TODO: Added
+  particle = null
+  pFound = null
+
+  //TODO: Added
+  pSec = null // just for FD currently...
+
+  //TODO: Added
+  nParticlesCD = null
+  nParticlesFD = null
+  nParticlesFT = null
+
+  //TODO: Added
+  pcaseCountNCDGT1 = null
+  pcaseCountNFDGT1 = null
+  pcaseCountNFT = null
+  npTotal = null
+
+  //TODO: Added
+  pInCD = null
+  pInFD = null
+  pInFT = null
+
 } // end loop over hipo files
 
 // write outHipo file
