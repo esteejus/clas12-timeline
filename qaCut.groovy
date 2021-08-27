@@ -586,10 +586,9 @@ detectors.each{ det ->
                 qaTree[runnum][filenum][det][pid]['evnumMax'] = evnumTree[runnum][filenum]['evnumMax']
                 qaTree[runnum][filenum][det][pid]['comment'] = ""
                 qaTree[runnum][filenum][det][pid]['defect'] = 0
+                qaTree[runnum][filenum][det][pid]['defects'] = []
                 if (hasSectors) {
                   qaTree[runnum][filenum][det][pid]['sectorDefects'] = sectors.collectEntries{s->[sec(s),0]}//TODO: Change to zero from empty list
-                } else { 
-                  qaTree[runnum][filenum][det][pid]['defects'] = []
                 }
               }
 

@@ -14,6 +14,7 @@ mkdir -p qa.${dataset}
 rm -r qa.${dataset}
 mkdir -p qa.${dataset}
 qatree=../outdat.${dataset}/qaTree.json
+qatreeSQL=../outdat.${dataset}/${dataset}.db
 opts=""
 if [ $# -ge 2 ]; then
   opts=${@:2}
@@ -25,9 +26,10 @@ if [ $# -ge 2 ]; then
   fi
 fi
 cp -v $qatree qa.${dataset}/qaTree.json
+cp -v $qatreeSQL qa.${dataset}/qaTree.db
 rm qa
 ln -sv qa.${dataset} qa
 run-groovy $CLASQA_JAVA_OPTS parseQaTree.groovy $opts
 echo ""
-echo "imported $qatree to local area, and parsed"
+echo "imported $qatree and $qatreeSQL to local area, and parsed"
 echo "view qa/qaTable.dat for human readable version"

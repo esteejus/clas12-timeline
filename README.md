@@ -67,8 +67,8 @@ Data monitoring tools for CLAS Quality Assurance (QA)
         which were terminated prematurely, there is no need to delete them prior to
         resubmission
 * `exeTimelines.sh $dataset`, which does the following:
-  * runs `qaPlot.groovy` (on electron trigger and FT)
-  * runs `qaCut.groovy` (on electron trigger and FT)
+  * runs `qaPlot.groovy`
+  * runs `qaCut.groovy`
   * runs `datasetOrganize.sh`
   * runs `monitorPlot.groovy`
   * copies timelines to webserver using `deployTimelines.sh`
@@ -188,7 +188,7 @@ files can then be fed to a QA script
     * see the supplementary scripts section for some helpful scripts to upload
       timelines to the webserver
 
-* `groovy qaPlot.groovy $dataset [$useFT]` 
+* `groovy qaPlot.groovy $dataset (deprecated [$useFT])` 
   * reads `outdat.${dataset}/data_table.dat` and generates `outmon/monitorElec.hipo`
     * within this hipo file, there is one directory for each run, containing several
       plots:
@@ -197,7 +197,7 @@ files can then be fed to a QA script
       * `grF*`: F vs. file number
       * `grN*`: N vs. file number
       * `grT*`: livetime vs. file number
-    * if `$useFT` is set, it will use FT electrons instead
+    * (Deprecated) if `$useFT` is set, it will use FT electrons instead
 
 
 ### Automated QA of Normalized Electron Yield
@@ -223,10 +223,10 @@ generate QA timelines, and a `json` file which is used for the manual followup Q
       * the decision of where to put the epoch boundary lines is currently done
         manually, but could be automated in a future release
 
-* `groovy qaCut.groovy $dataset [$useFT]`
+* `groovy qaCut.groovy $dataset (deprecated [$useFT])`
   * reads `outmon/monitorElec.hipo`, along with `epochs.${dataset}.txt`, to build
     timelines for the online monitor
-  * if `$useFT` is set, it will use FT electrons instead
+  * (Deprecated) if `$useFT` is set, it will use FT electrons instead
   * the runs are organized into epochs, wherein each:
     * calculate N/F quartiles
       * `mq`: middle quartile, the overall median N/F
