@@ -95,7 +95,7 @@ qaTree.sort{a,b -> a.key.toInteger() <=> b.key.toInteger() }.each{
   run, runTree ->
   
   // Loop condition list and append db entries
-  def head = "\nRUN: $run \n"
+  def head = "\nRUN: $run\n"
   for (cnd in cnds) { 
     def condition = db.getCondition(Long.valueOf(run),cnd)
     entry = ""
@@ -140,3 +140,4 @@ qaTree.sort{a,b -> a.key.toInteger() <=> b.key.toInteger() }.each{
 }
 
 outfileW.close()
+println("\nparsed $infile to $outfile")
