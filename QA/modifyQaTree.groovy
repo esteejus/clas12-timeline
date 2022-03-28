@@ -226,17 +226,18 @@ else if( cmd=="addComment" || cmd=="setComment") {
 
 else if( cmd=="custom") {
   // this cmd is useful if you want to do a specific action, while
-  // calling this groovy script from another program
+  // calling this groovy script from another program;
+  // - it is likely you need to modify this block
   def rnum,fnum
 
   // arguments
-  /* // [runnum] [filenum]
+  /* // [runnum] [filenum]; operate on single file
   if(args.length==3) {
     rnum = args[1].toInteger()
     fnum = args[2].toInteger()
   } else return
   */
-  ///* // [runnum]; loop over files
+  ///* // [runnum]; operate on full run
   if(args.length==2) {
     rnum = args[1].toInteger()
   } else return
@@ -244,6 +245,7 @@ else if( cmd=="custom") {
 
   qaTree["$rnum"].each { k,v -> fnum = k.toInteger() // loop over files
 
+    /* // remove outlier bits and add misc bit, to all sectors
     def secList = (1..6).collect{it}
     secList.each{ 
       qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] += T.bit("Misc") // add bit
@@ -252,8 +254,14 @@ else if( cmd=="custom") {
       qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] -= T.bit("TerminalOutlier") // delete bit
       qaTree["$rnum"]["$fnum"]["sectorDefects"]["$it"] -= T.bit("MarginalOutlier") // delete bit
     }
-
     def cmt = "setup period; possible beam modulation issues"
+    */
+
+    ///* // add misc bit to sector 6 only
+    qaTree["$rnum"]["$fnum"]["sectorDefects"]["6"] += T.bit("Misc")
+    def cmt = "FADC failure in sector 6"
+    //*/
+
     if(!qaTree["$rnum"]["$fnum"].containsKey("comment")) {
       qaTree["$rnum"]["$fnum"]["comment"] = cmt
     }

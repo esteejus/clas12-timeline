@@ -7,7 +7,7 @@ import Tools
 Tools T = new Tools()
 
 infile="qa/qaTree.json"
-outfile="qa/qaTable.dat"
+outfile="qa/qaTree.json.table"
 if(args.size()>=1 && args[0].endsWith(".json")) {
   infile = args[0]
   outfile = "${infile}.table"
