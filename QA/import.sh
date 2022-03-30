@@ -10,26 +10,30 @@ if [ $# -lt 1 ]; then
   exit
 fi
 dataset=$1
+shift
+
+# make new dataset working directory
 mkdir -p qa.${dataset}
 rm -r qa.${dataset}
 mkdir -p qa.${dataset}
-qatree=../outdat.${dataset}/qaTree.json
+
+# parse arguments
+qatree=../outdat.${dataset}/qaTree.json # default
 qatreeSQL=../outdat.${dataset}/${dataset}.db
 opts=""
-if [ $# -ge 2 ]; then
-  opts=${@:2}
-  if [ -f $2 ]; then
-    qatree=$2
-    if [ $# -gt 2 ]; then
-      opts=${@:3}
-    fi
+for opt in "$@"; do
+  if [[ $opt =~ \.json$ ]]; then qatree=$opt
+  else opts="$opts $opt"
   fi
-fi
+done
+
+# import the JSON file, and symlink qa
 cp -v $qatree qa.${dataset}/qaTree.json
 cp -v $qatreeSQL qa.${dataset}/qaTree.db
+touch qa
 rm qa
 ln -sv qa.${dataset} qa
-run-groovy $CLASQA_JAVA_OPTS parseQaTree.groovy $opts
-echo ""
-echo "imported $qatree and $qatreeSQL to local area, and parsed"
-echo "view qa/qaTable.dat for human readable version"
+echo "imported $qatree to local area: qa/qaTree.json"
+
+# parse the JSON file into human-readable format
+run-groovy $CLASQA_JAVA_OPTS parseQaTree.groovy qa/qaTree.json $opts
