@@ -46,10 +46,10 @@ for rundir in `ls -d ${datadir}/*/ | sed 's/\/$//'`; do
     if [ $usetape -eq 1 ]; then
       scratchdir="/scratch/slurm/$(whoami)/${run}"
       cmd="mkdir -P $scratchdir && jget ${rundir}/* ${scratchdir}/"
-      cmd="$cmd && $CLASQA/run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $scratchdir dst"
+      cmd="$cmd && run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $scratchdir dst"
       cmd="$cmd && rm -r $scratchdir"
     else
-      cmd="$CLASQA/run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $rundir dst"
+      cmd="run-groovy $CLASQA_JAVA_OPTS monitorRead.groovy $rundir dst"
     fi
     echo "$cmd" >> $joblist
     for runfile in outdat/data_table_${run}.dat outmon/monitor_${run}.hipo; do
