@@ -739,12 +739,12 @@ detectors.each{ det ->
           )
           TLA[sector-1].addPoint(runnum,totA,0,0)
           TLN[sector-1].addPoint(runnum,totN,0,0)
-          TLU[sector-1].addPoint(runnum,totU/1e6,0,0) // (converted nC->mC) //NOTE: ADDED 5/17/23
-          if (sector==0) TLF[0].addPoint(runnum,totF/1e6,0,0) // (converted nC->mC) //NOTE: ADDED 5/17/23. REMOVED totFacc[sector-1],0,0)
-          if (sector==0) {//NOTE: ADDED 5/17/23 //NOTE: ASSUMING THIS IS NEEDED FOR ALL BELOW ALSO CHECK ABOVEL THOUGH FOR U
-            TLFA[sector-1].addPoint(runnum,totFacc[sector-1],0,0)//NOTE: ADDED 5/17/23
-            TLTT[sector-1].addPoint(runnum,totLT,0,0)//NOTE: ADDED 5/17/23
-            TLTA[sector-1].addPoint(runnum,aveLT,0,0)//NOTE: ADDED 5/17/23. REMOVED: if (sector==0) TLT[0].addPoint(runnum,totT,0,0)
+          if (sector==0) {
+            TLU[0].addPoint(runnum,totU/1e6,0,0) // (converted nC->mC) //NOTE: ADDED 5/17/23
+            TLF[0].addPoint(runnum,totF/1e6,0,0) // (converted nC->mC) //NOTE: ADDED 5/17/23. REMOVED totFacc[sector-1],0,0)
+            TLFA[0].addPoint(runnum,totFacc[sector-1],0,0)//NOTE: ADDED 5/17/23
+            TLTT[0].addPoint(runnum,totLT,0,0)//NOTE: ADDED 5/17/23
+            TLTA[0].addPoint(runnum,aveLT,0,0)//NOTE: ADDED 5/17/23. REMOVED: if (sector==0) TLT[0].addPoint(runnum,totT,0,0)
           }//NOTE: ADDED 5/17/23
           TLsigmaN[sector-1].addPoint(runnum,reluncN,0,0)
           TLsigmaF[sector-1].addPoint(runnum,reluncF,0,0)
