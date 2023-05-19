@@ -31,6 +31,7 @@ def runnum, filenum, eventNumMin, eventNumMax, sector
 def nElec, nElecFT
 def fcStart, fcStop
 def ufcStart, ufcStop
+def aveLivetime
 def fcCharge
 def ufcCharge
 def trigRat
@@ -125,7 +126,7 @@ dataFile.eachLine { line ->
   fcStop = tok[r++].toBigDecimal()
   ufcStart = tok[r++].toBigDecimal()
   ufcStop = tok[r++].toBigDecimal()
-  avelivetime = tok.size()>11 ? tok[r++].toBigDecimal() : -1 //NOTE: ADDED 5/17/23. MODIFIED livetime->avelivetime
+  aveLivetime = tok.size()>11 ? tok[r++].toBigDecimal() : -1 //NOTE: ADDED 5/17/23. MODIFIED livetime->aveLivetime
   // TODO: Added: tokenize routine for additional particles
   particlesSize = tok.size()>12 ? tok[r++].toInteger() : 0
   counter = 0
