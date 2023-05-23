@@ -635,7 +635,7 @@ detectors.each{ det ->
               if( LT<0.9 ) {
                 qaTree[runnum][filenum]['defects'].add(T.bit("LowLiveTime"))
                 qaTree[runnum][filenum][det][pid]['defects'].add(T.bit("LowLiveTime"))
-                livetime_defect = (Integer)T.bit("LowLiveTime")
+                livetime_defect = (Integer)2**T.bit("LowLiveTime")
                 qaTree[runnum][filenum]['livetime'] = livetime_defect//TODO: Added
               }
 
