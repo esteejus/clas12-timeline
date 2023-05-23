@@ -642,22 +642,22 @@ detectors.each{ det ->
               // insert in qaTree
               def evmin = evnumTree[runnum][filenum]['evnumMin']
               def evmax = evnumTree[runnum][filenum]['evnumMax']
-              def defects = ( defectList.size()==0 ? 0 : defectList.sum() ) //.collect{2**it} //NOTE: Currently defectList should only have one entry
+              def defects = ( defectList.size()==0 ? 0 : defectList.collect{2**it}.sum() ) //.collect{2**it} //NOTE: Currently defectList should only have one entry, and for this to work it should only have one entry per defect bit type.
               if (hasSectors) {
-                qaTree[runnum][filenum][det][pid]['sectorDefects'][sector] = defectList.collect()
-                if (qaTree[runnum][filenum][det][pid]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det][pid]['defect'] = 1 }
-                if (qaTree[runnum][filenum][det]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det]['defect'] = 1 }
-                if (qaTree[runnum][filenum]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum]['defect'] = 1 }
+                qaTree[runnum][filenum][det][pid]['sectorDefects'][sector] = defects
+                if (qaTree[runnum][filenum][det][pid]['defect']==0 && defectList.size()>0) { qaTree[runnum][filenum][det][pid]['defect'] = 1 }
+                if (qaTree[runnum][filenum][det]['defect']==0 && defectList.size()>0) { qaTree[runnum][filenum][det]['defect'] = 1 }
+                if (qaTree[runnum][filenum]['defect']==0 && defectList.size()>0) { qaTree[runnum][filenum]['defect'] = 1 }
                 db.add(id:id,run:runnum,filenum:filenum,evmin:evmin,evmax:evmax,livetime:livetime_defect,
                   detector:det,pid:pid,defect:0,sector:sector,sectordefect:defects,comment:"")
                 id++
-              } else {
-                qaTree[runnum][filenum][det][pid]['defects'] = defectList.collect()
-                if (qaTree[runnum][filenum][det][pid]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det][pid]['defect'] = 1 }
-                if (qaTree[runnum][filenum][det]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum][det]['defect'] = 1 }
-                if (qaTree[runnum][filenum]['defect']==0 && defectList.sum()>0) { qaTree[runnum][filenum]['defect'] = 1 }
+              } else { //TODO: FIX STRUCTURE HERE BELOW HAVE JSON DATABASE WITH JUST 2**(defect) entries but why are we adding to database here...?
+                qaTree[runnum][filenum][det][pid]['defects'] = defects
+                if (qaTree[runnum][filenum][det][pid]['defect']==0 && defectList.size()>0) { qaTree[runnum][filenum][det][pid]['defect'] = 1 }
+                if (qaTree[runnum][filenum][det]['defect']==0 && defectList.size()>0) { qaTree[runnum][filenum][det]['defect'] = 1 }
+                if (qaTree[runnum][filenum]['defect']==0 && defectList.size()>0) { qaTree[runnum][filenum]['defect'] = 1 }
                 db.add(id:id,run:runnum,filenum:filenum,evmin:evmin,evmax:evmax,livetime:livetime_defect,
-                detector:det,pid:pid,defect:defects,sector:sector,sectordefect:0,comment:"")
+                  detector:det,pid:pid,defect:defects,sector:sector,sectordefect:0,comment:"")
                 id++
               }
 
