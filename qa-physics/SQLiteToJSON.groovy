@@ -41,7 +41,7 @@ try { sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
 def db
 def qaTree = [:]
 def det = useFT ? 'eFT' : 'eCFD'
-def getBitsFromMask = { bitMask -> Integer.toString(bitMask,2).collect{s->s as Integer} }
+def getBitsFromMask = { bitMask -> return Integer.toString(bitMask,2).collect{s->s as Integer} }
 try {  sql.eachRow("select * from "+dataset+" where detector=='${det}'") { //TODO: Check for relevant column entries?   Also since you can have loss bit and 1/3 outlier bits need to convert back to lists...
 
     // Check entries
