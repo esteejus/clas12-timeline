@@ -71,7 +71,8 @@ qaTree.each { qaRun, qaRunTree ->
       defList += qaDefList.collect{it.toInteger()}
     }
     defList.unique().each { defMask += (0x1<<it) }
-    // qaTree[qaRun][qaFile]["defect"] = defMask
+    if (qaTree[qaRun][qaFile]["defect"] != defMask) print("*** WARNING *** Defect and sectorDefects do not agree @ run, file = ${run}, ${file}")
+    // qaTree[qaRun][qaFile]["defect"] = defMask //NOTE: This block should be identical to that in qaCut.groovy, but don't update the qaTree here since you're reading it from file already.
 
     // Add entries to SQL Database for each sector
     qaFileTree["sectorDefects"].each { qaSec, qaDefList ->
@@ -94,4 +95,4 @@ qaTree.each { qaRun, qaRunTree ->
 }
 
 //--------------------------------------------------------------------------
-println "Converted SQLite database to JSON tree in:\n\t${filename}"
+println "Converted SQLite database to JSON tree in:\n\t${db_path}"
