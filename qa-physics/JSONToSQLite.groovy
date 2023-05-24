@@ -18,6 +18,7 @@ import groovy.sql.Sql
 dataset = 'inbending1'
 if(args.length<1) {
   println("JSONToSQLite.groovy [dataset] [qaTree_path] [useFT]")
+  System.exit(0)
 }
 if(args.length>=1) dataset = args[0]
 def out_dir = "QA/qa."+dataset+"/" //TODO: CHECK THESE PATHS AND MAYBE CLEAN ALL THIS UP A BIT.

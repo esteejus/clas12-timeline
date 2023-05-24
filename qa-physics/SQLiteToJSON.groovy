@@ -17,6 +17,7 @@ import groovy.sql.Sql
 dataset = 'inbending1'
 if(args.length<1) {
   println("SQLiteToJSON.groovy [dataset] [db_path] [useFT]")
+  System.exit(0)
 }
 if(args.length>=1) dataset = args[0]
 def out_dir = "outdat."+dataset+"/"
