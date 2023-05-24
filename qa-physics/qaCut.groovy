@@ -8,6 +8,18 @@ import Tools
 Tools T = new Tools()
 
 //--------------------------------------------------------------------------
+// SQLite3 IMPORTS AND DEPENDENCIES
+@Grapes([
+ @Grab(group='org.xerial',module='sqlite-jdbc',version='3.7.2'),
+ @GrabConfig(systemClassLoader=true)
+])
+ 
+import java.sql.*
+import org.sqlite.SQLite
+import groovy.sql.Sql
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
 // ARGUMENTS:
 dataset = 'inbending1'
 useFT = false // if true, use FT electrons instead
@@ -15,6 +27,32 @@ qaBit = -1 // if positive, produce QA timeline based on QA/qa.${dataset}/qaTree.
 if(args.length>=1) dataset = args[0]
 if(args.length>=2) useFT = (args[1]=="FT") ? true : false
 if(args.length>=3) qaBit = args[2].toInteger()
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
+// CREATE SQL DATABASE AND TABLE
+def db_path = "outdat."+dataset+"/"+dataset+".db" //TODO: Add option to manually specify path to db
+def sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
+def force = false // force overwrite of database table
+if (force) sql.execute("drop table if exists "+dataset)
+try { sql.execute("create table "+dataset+
+      " (id integer, run integer, filenum integer,"+
+      " evmin integer, evmax integer,"+
+      " detector string,"+
+      " defect integer, sector integer, sectordefect integer, comment string)")
+} catch (SQLException e) {
+  println "*** ERROR ***  Database table ${dataset} already exists."
+  e.printStackTrace()
+  // System.exit(0) //NOTE: Don't exit here since for FT option you should just update existing database.
+}
+def db
+try { db = sql.dataSet(dataset)
+} catch (SQLException e) {
+  println "*** ERROR *** Could not open dataset ${dataset}."
+  e.printStackTrace()
+  System.exit(0)
+}
+def db_id = db.rows() // global counter for entries added to database
 //--------------------------------------------------------------------------
 
 // vars and subroutines
@@ -640,6 +678,8 @@ inList.each { obj ->
 
 
 // assign defect masks
+// def db_id = db.rows() //NOTE: Defined above just after opening sql database. Global database id is needed for adding entries.
+def det = useFT ? 'eFT' : 'eCFD' //NOTE: The naming here is for forwards compatibility with changes to database structure.
 qaTree.each { qaRun, qaRunTree -> 
   qaRunTree.each { qaFile, qaFileTree ->
     def defList = []
@@ -649,6 +689,24 @@ qaTree.each { qaRun, qaRunTree ->
     }
     defList.unique().each { defMask += (0x1<<it) }
     qaTree[qaRun][qaFile]["defect"] = defMask
+
+    // Add entries to SQL Database for each sector
+    qaFileTree["sectorDefects"].each { qaSec, qaDefList ->
+      def sectorDefMask = 0
+      qaDefList.unique().each { sectorDefMask += (0x1<<it) }
+      db.add(id:id,
+            run:qaRun,
+            filenum:qaFile,
+            evmin:qaFileTree['evnumMin'],
+            evmax:qaFileTree['evnumMax'],
+            detector:det,
+            defect:defMask,
+            sector:qaSec,
+            sectordefect:sectorDefMask,
+            comment:""
+            )
+      db_id++
+    }
   }
 }
 
