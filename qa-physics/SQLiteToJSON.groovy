@@ -29,7 +29,7 @@ def qaTree_path = out_dir+"qaTree"+(useFT?"FT":"")+"_FROM_SQL.json"
 
 //--------------------------------------------------------------------------
 // OPEN SQL DATABASE CONNECTION AND TABLE AND FILL QA TREE
-def sectors = 0..6
+def sectors = 0..<6
 def sec = { int i -> i+1 }
 def sql
 try { sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
