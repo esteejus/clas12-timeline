@@ -55,10 +55,9 @@ def db_id = sql.rows("select count(*) as nrows from "+dataset)[0]["nrows"] // gl
 //--------------------------------------------------------------------------
 
 // define qaTree
-def qaTree // [runnum][filenum] -> defects enumeration
 def slurper = new JsonSlurper()
 def jsonFile = new File(qaTree_path)
-def qaTree = slurper.parse(jsonFile)
+def qaTree = slurper.parse(jsonFile) // [runnum][filenum] -> defects enumeration
 
 // assign defect masks
 // def db_id = db.rows() //NOTE: Defined above just after opening sql database. Global database id is needed for adding entries.
