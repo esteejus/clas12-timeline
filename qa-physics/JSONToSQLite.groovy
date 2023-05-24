@@ -78,7 +78,7 @@ qaTree.each { qaRun, qaRunTree ->
     qaFileTree["sectorDefects"].each { qaSec, qaDefList ->
       def sectorDefMask = 0
       qaDefList.unique().each { sectorDefMask += (0x1<<it) }
-      db.add(id:id,
+      db.add(id:db_id,
             run:qaRun,
             filenum:qaFile,
             evmin:qaFileTree['evnumMin'],
