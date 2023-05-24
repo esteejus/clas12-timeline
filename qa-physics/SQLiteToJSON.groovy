@@ -52,9 +52,10 @@ try {  sql.eachRow("select * from "+dataset+" where detector=='${det}'") { //TOD
 
     // Add entries
     qaTree[it.run][it.filenum]['defect'] = it.defect //NOTE: This should be the same for all sector entries
-    def sectorDefects = getBitsFromMask(it.sectordefect)
-    qaTree[it.run][it.filenum]['sectorDefects'][it.sector].addAll(sectorDefects)
-
+    if (it.sectordefect>0) { //NOTE: Only add entries if they are non zero
+      def sectorDefects = getBitsFromMask(it.sectordefect)
+      qaTree[it.run][it.filenum]['sectorDefects'][it.sector].addAll(sectorDefects)
+    }
 } } catch (SQLException e) {
   println "*** ERROR *** Could not open table ${dataset}."
   e.printStackTrace()
