@@ -51,7 +51,7 @@ try { db = sql.dataSet(dataset)
   e.printStackTrace()
   System.exit(0)
 }
-def db_id = db.rows() // global counter for entries added to database
+def db_id = sql.rows("select count(*) as nrows from "+dataset)[0]["nrows"] // global counter for entries added to database
 //--------------------------------------------------------------------------
 
 // define qaTree
