@@ -705,7 +705,7 @@ qaTree.each { qaRun, qaRunTree ->
             sectordefect:sectorDefMask,
             comment:""
             )
-      db_id++
+      db_id += 1
     }
   }
 }
