@@ -38,7 +38,9 @@ try { sql.execute("create table "+tablename+
       " (id integer, run integer, filenum integer,"+
       " fcChargeMin double, fcChargeMax double,"+
       " ufcChargeMin double, ufcChargeMax double,"+
-      " livetime double, nElec integer, sector integer)")
+      " livetime double,"+
+      " nElec_sec1 integer, nElec_sec2 integer, nElec_sec3 integer,"+
+      " nElec_sec4 integer, nElec_sec5 integer, nElec_sec6 integer)")
 } catch (SQLException e) {
   println "*** WARNING ***  Database table ${tablename} already exists."
   e.printStackTrace()
