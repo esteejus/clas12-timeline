@@ -95,4 +95,4 @@ qaTree.each { qaRun, qaRunTree ->
 }
 
 //--------------------------------------------------------------------------
-println "Converted SQLite database to JSON tree in:\n\t${db_path}"
+println "Converted JSON file to SQLite database in:\n\t${db_path}"
