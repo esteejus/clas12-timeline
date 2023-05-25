@@ -35,7 +35,7 @@ def sec = { int i -> i+1 }
 def sql
 try { sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
 } catch (SQLException e) {
-  println "*** ERROR *** Database ${dataset} does not exist."
+  println "*** ERROR *** Could not open ${db_path}."
   e.printStackTrace()
   System.exit(0)
 }
