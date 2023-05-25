@@ -74,6 +74,7 @@ chargeTree.each { chargeRun, chargeRunTree ->
         fcChargeMax:chargeFileTree['fcChargeMax'],
         ufcChargeMin:chargeFileTree['ufcChargeMin'],
         ufcChargeMax:chargeFileTree['ufcChargeMax'],
+        livetime:chargeFileTree['livetime'],
         nElec_sec1:nElec["${sector++}"], //NOTE: THESE KEYS ARE STRINGS OF INTS NOT INTS.
         nElec_sec2:nElec["${sector++}"],
         nElec_sec3:nElec["${sector++}"],
