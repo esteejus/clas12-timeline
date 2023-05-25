@@ -66,6 +66,7 @@ def chargeTree = slurper.parse(jsonFile) // [runnum][filenum] -> defects enumera
 chargeTree.each { chargeRun, chargeRunTree ->
   chargeRunTree.each { chargeFile, chargeFileTree ->
     def nElec = chargeFileTree["nElec"]
+    def sector = 1
     db.add(id:db_id,
         run:chargeRun,
         filenum:chargeFile,
@@ -73,12 +74,12 @@ chargeTree.each { chargeRun, chargeRunTree ->
         fcChargeMax:chargeFileTree['fcChargeMax'],
         ufcChargeMin:chargeFileTree['ufcChargeMin'],
         ufcChargeMax:chargeFileTree['ufcChargeMax'],
-        nElec_sec1:nElec[0],
-        nElec_sec2:nElec[1],
-        nElec_sec3:nElec[2],
-        nElec_sec4:nElec[3],
-        nElec_sec5:nElec[4],
-        nElec_sec6:nElec[5],
+        nElec_sec1:nElec["${sector++}"], //NOTE: THESE KEYS ARE STRINGS OF INTS NOT INTS.
+        nElec_sec2:nElec["${sector++}"],
+        nElec_sec3:nElec["${sector++}"],
+        nElec_sec4:nElec["${sector++}"],
+        nElec_sec5:nElec["${sector++}"],
+        nElec_sec6:nElec["${sector++}"],
         comment:""
         )
     db_id += 1
