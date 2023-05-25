@@ -50,8 +50,7 @@ try {  sql.eachRow("select * from "+tablename) { //TODO: Check for relevant colu
         chargeTree[it.run][it.filenum] = [
         'fcChargeMin':it.fcChargeMin,'fcChargeMax':it.fcChargeMax,
         'ufcChargeMin':it.ufcChargeMin,'ufcChargeMax':it.ufcChargeMax,
-        'livetime':it.livetime,'nElec':[1:it.nElec_sec1,2:it.nElec_sec2,3:it.nElec_sec3,4:it.nElec_sec4,5:it.nElec_sec5,6:it.nElec_sec6], //NOTE: Hard-coded for now but maybe there is some more elegant way to do this...
-        'comment':it.comment]
+        'livetime':it.livetime,'nElec':[1:it.nElec_sec1,2:it.nElec_sec2,3:it.nElec_sec3,4:it.nElec_sec4,5:it.nElec_sec5,6:it.nElec_sec6]] //NOTE: Hard-coded for now but maybe there is some more elegant way to do this...
     }
 } } catch (SQLException e) {
   println "*** ERROR *** Could not open table ${tablename}."
