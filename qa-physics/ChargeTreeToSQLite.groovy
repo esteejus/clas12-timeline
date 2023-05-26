@@ -25,16 +25,16 @@ def out_dir = "QA/qa."+dataset+"/" //NOTE: KEEP THIS THE SAME AS THE DEFAULT PAT
 def chargeTree_path = "outdat.${dataset}/chargeTree.json"
 if(args.length>=2) qaTree_path = args[1]; out_dir = './'
 def db_path = out_dir+dataset+"_FROM_JSON.db"
+def table = 'chargeTree'
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
 // CREATE SQL DATABASE AND TABLE
 // def db_path = "outdat."+dataset+"/"+dataset+".db" //TODO: Add option to manually specify path to db //NOTE: Not needed here.
 def sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
-def tablename = dataset+'_chargeTree'
 def force = false // force overwrite of database table
-if (force) sql.execute("drop table if exists "+tablename)
-try { sql.execute("create table "+tablename+
+if (force) sql.execute("drop table if exists "+table)
+try { sql.execute("create table "+table+
       " (id integer, run integer, filenum integer,"+
       " fcChargeMin double, fcChargeMax double,"+
       " ufcChargeMin double, ufcChargeMax double,"+
@@ -43,18 +43,18 @@ try { sql.execute("create table "+tablename+
       " nElec_sec4 integer, nElec_sec5 integer, nElec_sec6 integer,"+
       " comment text)")
 } catch (SQLException e) {
-  println "*** WARNING ***  Database table ${tablename} already exists."
+  println "*** WARNING ***  Database table ${table} already exists."
   e.printStackTrace()
   // System.exit(0) //NOTE: Don't exit here since for FT option you should just update existing database.
 }
 def db
-try { db = sql.dataSet(tablename)
+try { db = sql.dataSet(table)
 } catch (SQLException e) {
-  println "*** ERROR *** Could not open dataset ${tablename}."
+  println "*** ERROR *** Could not open table ${table}."
   e.printStackTrace()
   System.exit(0)
 }
-def db_id = sql.rows("select count(*) as nrows from "+tablename)[0]["nrows"] // global counter for entries added to database table
+def db_id = sql.rows("select count(*) as nrows from "+table)[0]["nrows"] // global counter for entries added to database table
 //--------------------------------------------------------------------------
 
 // define qaTree

@@ -27,6 +27,7 @@ if(args.length>=3) useFT = true
 def qaTree_path = "QA/qa.${dataset}/qaTree"+(useFT?"FT":"")+".json"
 if(args.length>=2) qaTree_path = args[1]; out_dir = './'
 def db_path = out_dir+dataset+"_FROM_JSON.db"
+def table = 'qaTree'
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
@@ -34,25 +35,25 @@ def db_path = out_dir+dataset+"_FROM_JSON.db"
 // def db_path = "outdat."+dataset+"/"+dataset+".db" //TODO: Add option to manually specify path to db //NOTE: Not needed here.
 def sql = Sql.newInstance("jdbc:sqlite:"+db_path, "org.sqlite.JDBC")
 def force = false // force overwrite of database table
-if (force) sql.execute("drop table if exists "+dataset)
-try { sql.execute("create table "+dataset+
+if (force) sql.execute("drop table if exists "+table)
+try { sql.execute("create table "+table+
       " (id integer, run integer, filenum integer,"+
       " evmin integer, evmax integer,"+
       " detector string,"+
       " defect integer, sector integer, sectordefect integer, comment string)")
 } catch (SQLException e) {
-  println "*** WARNING ***  Database table ${dataset} already exists."
+  println "*** WARNING ***  Database table ${table} already exists."
   e.printStackTrace()
   // System.exit(0) //NOTE: Don't exit here since for FT option you should just update existing database.
 }
 def db
-try { db = sql.dataSet(dataset)
+try { db = sql.dataSet(table)
 } catch (SQLException e) {
-  println "*** ERROR *** Could not open dataset ${dataset}."
+  println "*** ERROR *** Could not open table ${table}."
   e.printStackTrace()
   System.exit(0)
 }
-def db_id = sql.rows("select count(*) as nrows from "+dataset)[0]["nrows"] // global counter for entries added to database
+def db_id = sql.rows("select count(*) as nrows from "+table)[0]["nrows"] // global counter for entries added to database
 //--------------------------------------------------------------------------
 
 // define qaTree

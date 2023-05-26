@@ -26,6 +26,7 @@ if(args.length>=2) { db_path = args[1]; out_dir = './' }
 def useFT = false
 if(args.length>=3) useFT = true
 def qaTree_path = out_dir+"qaTree"+(useFT?"FT":"")+"_FROM_SQL.json"
+def table = 'qaTree' //NOTE: name for default sqlite table
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
@@ -49,7 +50,7 @@ def getBitsFromMask = { bitMask ->
   for (int i in 0..maxpowers) { if (idxList[i]>0) bits.add(maxpowers-i) } //NOTE: Powers of 2 are listed in descending order
   return bits.unique()
 }
-try {  sql.eachRow("select * from "+dataset+" where detector=='${det}'") { //TODO: Check for relevant column entries?   Also since you can have loss bit and 1/3 outlier bits need to convert back to lists...
+try {  sql.eachRow("select * from "+table+" where detector=='${det}'") { //TODO: Check for relevant column entries?   Also since you can have loss bit and 1/3 outlier bits need to convert back to lists...
 
     // Check entries
     if (!qaTree.keySet().contains(it.run)) { qaTree[it.run] = [:] }
@@ -64,7 +65,7 @@ try {  sql.eachRow("select * from "+dataset+" where detector=='${det}'") { //TOD
       qaTree[it.run][it.filenum]['sectorDefects'][it.sector].addAll(sectorDefects)
     }
 } } catch (SQLException e) {
-  println "*** ERROR *** Could not open table ${dataset}."
+  println "*** ERROR *** Could not open table ${table}."
   e.printStackTrace()
   System.exit(0)
 }
