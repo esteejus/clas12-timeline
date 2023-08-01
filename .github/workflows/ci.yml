@@ -43,6 +43,11 @@ jobs:
   build_coatjava:
     runs-on: ubuntu-latest
     steps:
+    - name: setup JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: 11
+        distribution: zulu
     - name: get coatjava
       uses: robinraju/release-downloader@v1.8
       with:
@@ -50,34 +55,40 @@ jobs:
         tag: 10.0.2
         tarBall: true
         extract: true
-    - name: ls
-      run: ls -lth
+    - name: rename coatjava release directory
+      run: |
+        rm *.tar.gz
+        mv JeffersonLab-coatjava* coatjava
+    - name: build coatjava
+      run: |
+        cd coatjava
+        ./build-coatjava.sh
     - name: tree
       run: tree
-    # - name: rename
-    #   run: mv -v coatjava-*.tar.gz build_coatjava.tar.gz
-    # - uses: actions/upload-artifact@v3
-    #   with:
-    #     name: build
-    #     retention-days: 1
-    #     path: build*.tar.gz
+    - name: tar
+      run: tar czvf build_coatjava.tar.gz coatjava/coatjava
+    - uses: actions/upload-artifact@v3
+      with:
+        name: build
+        retention-days: 1
+        path: build*.tar.gz
 
-  # test_qa_detectors:
-  #   needs:
-  #     - build_timelines
-  #     - get_coatjava
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - uses: actions/download-artifact@v3
-  #     with:
-  #       name: build
-  #   - name: untar
-  #     run: ls build*.tar.gz | xargs -I_ tar xzvf _
-  #   - name: tree
-  #     run: tree
+  test_qa_detectors:
+    needs:
+      - build_timelines
+      - build_coatjava
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: build
+    - name: untar
+      run: ls build*.tar.gz | xargs -I_ tar xzvf _
+    - name: tree
+      run: tree
 
 # TODO:
 # - how can we make sure the version of coatjava built here matches that in local maven dependencies?
-# - is there CD avaialble for coatjava?
+# - is there CD available for coatjava?
 # - upload files to /u/group/clas/www/clasweb/html/clas12offline/distribution
