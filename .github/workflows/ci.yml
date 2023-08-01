@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+
+  build_timelines:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -29,9 +30,47 @@ jobs:
         distribution: zulu
     - name: build
       run: ./bin/build-all.sh
+    - uses: actions/upload-artifacts@v3
+      with:
+        name: build
+        retention-days: 1
+        path: |
+          detectors/target
+          monitoring/target
 
-  # test_qa_detectors:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  # /u/group/clas/www/clasweb/html/clas12offline/distribution
+  get_coatjava:
+    runs-on: ubuntu-latest
+    steps:
+    - name: get_coatjava
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: JeffersonLab/coatjava
+        tag: 10.0.2
+        tarBall: true
+    - name: sandbox_ls
+      run: ls -lt
+    - name: rename
+      run: mv -v *.tar.gz coatjava.tar.gz
+    - uses: actions/upload-artifacts@v3
+      with:
+        name: build
+        retention-days: 1
+        path: coatjava.tar.gz
 
+  test_qa_detectors:
+    needs:
+      - build_timelines
+      - get_coatjava
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: build
+    - name: sandbox_ls
+      run: ls -lt
+
+# TODO:
+# - how can we make sure the version of coatjava built here matches that in local maven dependencies?
+# - is there CD avaialble for coatjava?
+# - upload files to /u/group/clas/www/clasweb/html/clas12offline/distribution
