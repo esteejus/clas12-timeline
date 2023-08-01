@@ -10,6 +10,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  timeline: rga/pass1/pass0/v2.2.26
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -26,3 +29,9 @@ jobs:
         distribution: zulu
     - name: build
       run: ./bin/build-all.sh
+
+  # test_qa_detectors:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  # /u/group/clas/www/clasweb/html/clas12offline/distribution
+
