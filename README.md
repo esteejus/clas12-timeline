@@ -1,7 +1,7 @@
 # clas12-timeline
 
 To download,
-```
+```bash
 git clone https://github.com/JeffersonLab/clas12-timeline.git
 ```
 
@@ -17,17 +17,17 @@ To run it interactively, see the [monitoring subdirectory](monitoring)
 
 ##  Timeline
 To build,
-```
+```bash
 ./bin/build-all.sh
 ```
 
 To run, execute following command,
 
-```
+```bash
 ./bin/detectors.sh "run group" "cooking version" "/path/to/monitoring/files/""
 ```
-with the adequate arguments, e.g.)
-```
+with the adequate arguments, e.g.,
+```bash
 ./bin/detectors.sh rgb pass0v25.18 /volatile/clas12/rg-b/offline_monitoring/pass0/v25.18/
 ```
 
@@ -35,7 +35,7 @@ with the adequate arguments, e.g.)
 ## Calibration QA
 
 To run,
-```
+```bash
 ./bin/qa.sh TIMELINE
 ```
 where `TIMELINE` is either the URL, for example,
