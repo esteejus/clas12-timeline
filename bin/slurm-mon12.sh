@@ -47,7 +47,8 @@ SLURM_TIME=4:00:00
 
 # test if there is a version name
 echo $ver | grep -q "/" && echo "---- [ERROR] version name must not contain / -------" >&2 && echo && exit 100
-echo "---- slurm job name will be: $ver"
+slurmJobName=clas12-timeline-monitoring-$ver
+echo "---- slurm job name will be: $slurmJobName"
 
 # make output directories
 mkdir -p log plots slurm
@@ -109,7 +110,7 @@ slurm=slurm/job.${ver}.slurm
 cat > $slurm << EOF
 #!/bin/sh
 #SBATCH --ntasks=1
-#SBATCH --job-name=clas12-timeline-monitoring---$ver
+#SBATCH --job-name=$slurmJobName
 #SBATCH --output=log/%x-run-$runnum-%j-%N.out
 #SBATCH --error=log/%x-run-$runnum-%j-%N.err
 #SBATCH --partition=production
