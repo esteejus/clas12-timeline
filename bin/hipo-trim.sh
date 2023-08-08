@@ -5,7 +5,8 @@ set -e
 # arguments
 if [ $# -ne 3 ]; then
   echo """
-  Trim a directory of HIPO files, each to specified number of events
+  Search a directory for HIPO files, trim each to specified number of events,
+  and output the trimmed files to a specified directory
 
   USAGE: $0 [TOP-LEVEL DIRECTORY] [OUTPUT DIRECTORY] [NUM EVENTS]
   - finds all HIPO files in [TOP-LEVEL DIRECTORY] and trims them
@@ -24,6 +25,7 @@ nEvents=$3
 mkdir -pv $outputTopDir
 
 
+# find input HIPO files
 for inputFile in $(find $inputTopDir -name "*.hipo"); do
 
   # create output file name
