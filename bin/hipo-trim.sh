@@ -1,10 +1,12 @@
 #!/bin/bash
-# trim a directory of HIPO files, each to specified number of events
 
 set -e
 
+# arguments
 if [ $# -ne 3 ]; then
   echo """
+  Trim a directory of HIPO files, each to specified number of events
+
   USAGE: $0 [TOP-LEVEL DIRECTORY] [OUTPUT DIRECTORY] [NUM EVENTS]
   - finds all HIPO files in [TOP-LEVEL DIRECTORY] and trims them
     to have [NUM EVENTS] events
@@ -12,26 +14,45 @@ if [ $# -ne 3 ]; then
   """ >&2
   exit 101
 fi
-
 inputTopDir=$(realpath $1)
 outputTopDir=$(realpath $2)
 nEvents=$3
 
+# checks and preparation
 [ ! -d $inputTopDir ] && echo "ERROR: [TOP-LEVEL DIRECTORY]=$inputTopDir does not exist" >&2 && exit 100
+[ $nEvents -lt 1 ] && echo "ERROR: [NUM EVENTS] should be greater than zero" >&2 && exit 100
 mkdir -pv $outputTopDir
 
-inputList=$(find $inputTopDir -name "*.hipo")
 
-for inputFile in $inputList; do
+for inputFile in $(find $inputTopDir -name "*.hipo"); do
+
+  # create output file name
   outputSubDir=$outputTopDir/$(dirname $(realpath $inputFile --relative-to $inputTopDir))
   outputFile=$outputSubDir/$(basename $inputFile)
   echo """[+] TRIM:
     input:  $inputFile
     output: $outputFile
   """
+
+  # if the output file exists, `hipo-utils -filter` will fail
+  if [ -f $outputFile ]; then
+    echo """
+    ERROR: this output file already exists...
+    SUGGESTION: remove [OUTPUT DIRECTORY] using the following command;
+                BE SURE IT IS CORRECT BEFORE YOU RUN IT!
+
+      rm -r $outputTopDir
+
+    """ >&2
+    exit 100
+  fi
   mkdir -pv $outputSubDir
-  echo hipo-utils -filter \
-    -n $nEvents \
+
+  # trim the input file
+  hipo-utils -filter \
+    -b "*::*"      \
+    -n $nEvents    \
     -o $outputFile \
     $inputFile
+
 done
