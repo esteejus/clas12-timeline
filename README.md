@@ -24,11 +24,11 @@ To build,
 To run, execute following command,
 
 ```bash
-./bin/detectors.sh "run group" "cooking version" "/path/to/monitoring/files/""
+./bin/run-detectors.sh "run group" "cooking version" "/path/to/monitoring/files/""
 ```
 with the adequate arguments, e.g.,
 ```bash
-./bin/detectors.sh rgb pass0v25.18 /volatile/clas12/rg-b/offline_monitoring/pass0/v25.18/
+./bin/run-detectors.sh rgb pass0v25.18 /volatile/clas12/rg-b/offline_monitoring/pass0/v25.18/
 ```
 
 
