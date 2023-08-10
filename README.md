@@ -36,7 +36,7 @@ with the adequate arguments, e.g.,
 
 To run,
 ```bash
-./bin/qa.sh TIMELINE
+./bin/run-qa.sh TIMELINE
 ```
 where `TIMELINE` is either the URL, for example,
 ```

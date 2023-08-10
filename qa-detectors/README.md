@@ -27,10 +27,10 @@ The specifications are specified by text files in [the `cuts` directory](cuts). 
   ```
 - Run one of:
   ```bash
-  ../bin/qa.sh                     # print usage guide
-  ../bin/qa.sh timeline_URL        # URL for a timeline
-  ../bin/qa.sh path/to/timelines   # or specify a timeline directory, relative to $TIMELINEDIR
-  ../bin/qa.sh path/to/timelines output_dir_name   # custom output directory name, relative to $TIMELINEDIR
+  ../bin/run-qa.sh                     # print usage guide
+  ../bin/run-qa.sh timeline_URL        # URL for a timeline
+  ../bin/run-qa.sh path/to/timelines   # or specify a timeline directory, relative to $TIMELINEDIR
+  ../bin/run-qa.sh path/to/timelines output_dir_name   # custom output directory name, relative to $TIMELINEDIR
   ```
 - The URLs for the timelines will be printed upon success
 - The new timeline files will appear in `/path/to/timelines_qa` (or in the
