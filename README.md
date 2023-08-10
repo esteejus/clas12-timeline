@@ -66,15 +66,15 @@ flowchart TB
     classDef timeline fill:#8ff,color:black
 
     dst[(DST Files)]:::data
-    runMonitoring[bin/run-monitoring.sh]:::script
+    runMonitoring[bin/run-monitoring.sh<br/><strong>slurm</strong>]:::script
     outMonitoring([plots/plotsRUNNUM/*.hipo]):::misc
     runDetectors[bin/run-detectors.sh]:::script
     outDetectors{{detector timelines}}:::timeline
     runDetectorsQA[bin/run-qa.sh]:::script
     outDetectorsQA{{detector timelines with QA}}:::timeline
 
-    qaPhysics[[qa-physics]]:::script
-    qadbTimelines{{Physics QA timelines}}:::timeline
+    qaPhysics[[qa-physics<br/><strong>slurm</strong>]]:::script
+    qadbTimelines{{physics QA timelines}}:::timeline
     qadb([QADB]):::misc
 
     webTimelines{{timelines on webserver}}:::timeline
