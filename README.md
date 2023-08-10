@@ -7,7 +7,7 @@ git clone https://github.com/JeffersonLab/clas12-timeline.git
 
 
 # How to submit `clas12_monitoring` to `slurm`
-To submit clas12_monitoring for each run from specified directory one should run these commands, e.g.:
+To submit `clas12_monitoring` for each run from specified directory one should run these commands, e.g.:
 ```bash
 ./bin/build-all.sh
 ./bin/run-monitoring.sh   # print usage guide
@@ -55,4 +55,31 @@ See [further details](qa-detectors/README.md) for more information.
 See [documentation here](qa-physics).
 
 
+# Flowchart
 
+```mermaid
+flowchart TB
+
+    classDef script   fill:#8f8,color:black
+    classDef data     fill:#ff8,color:black
+    classDef misc     fill:#f8f,color:black
+    classDef timeline fill:#8ff,color:black
+
+    dst[(DST Files)]:::data
+    runMonitoring[bin/run-monitoring.sh]:::script
+    outMonitoring([plots/plotsRUNNUM/*.hipo]):::misc
+    runDetectors[bin/run-detectors.sh]:::script
+    outDetectors{{detector timelines}}:::timeline
+    runDetectorsQA[bin/run-qa.sh]:::script
+    outDetectorsQA{{detector timelines with QA}}:::timeline
+
+    qaPhysics[[qa-physics]]:::script
+    qadbTimelines{{Physics QA timelines}}:::timeline
+    qadb([QADB]):::misc
+
+    webTimelines{{timelines on webserver}}:::timeline
+
+    dst --> runMonitoring --> outMonitoring --> runDetectors --> outDetectors --> runDetectorsQA --> outDetectorsQA --> webTimelines
+    dst --> qaPhysics --> qadbTimelines --> webTimelines
+    qaPhysics --> qadb
+```
