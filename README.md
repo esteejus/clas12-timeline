@@ -10,7 +10,7 @@ git clone https://github.com/JeffersonLab/clas12-timeline.git
 To submit clas12_monitoring for each run from specified directory one should run these commands, e.g.:
 ```bash
 ./bin/build-all.sh
-./bin/slurm-mon12.sh   # print usage guide
+./bin/run-monitoring.sh   # print usage guide
 ```
 
 To run it interactively, see the [monitoring subdirectory](monitoring)
