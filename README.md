@@ -9,7 +9,8 @@ git clone https://github.com/JeffersonLab/clas12-timeline.git
 
 To build,
 ```bash
-./bin/build-all.sh
+./bin/build-all.sh        # standard build
+./bin/build-all.sh clean  # alternatively, a clean build
 ```
 
 ## Detector Timelines

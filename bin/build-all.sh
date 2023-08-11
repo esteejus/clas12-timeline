@@ -1,12 +1,18 @@
 #!/bin/bash
+# build clas12-timeline; run with argument 'clean' for a clean build
 
 set -e
 
-d="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+wd="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
-cd $d/../monitoring
-mvn package
-cd -
-cd $d/../detectors
-mvn package
-cd -
+dirs=(
+  $wd/../monitoring
+  $wd/../detectors
+)
+
+for d in ${dirs[@]}; do
+  pushd $d
+  [ "$1" == "clean" ] && mvn clean
+  mvn package
+  popd
+done
