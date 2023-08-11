@@ -1,28 +1,29 @@
 # clas12-timeline
 
+Timeline production for CLAS12. Timelines are deployed to [clas12mon](https://clas12mon.jlab.org).
+
 To download,
 ```bash
 git clone https://github.com/JeffersonLab/clas12-timeline.git
 ```
 
-
-# How to submit `clas12_monitoring` to `slurm`
-To submit `clas12_monitoring` for each run from specified directory one should run these commands, e.g.:
-```bash
-./bin/build-all.sh
-./bin/run-monitoring.sh   # print usage guide
-```
-
-To run it interactively, see the [monitoring subdirectory](monitoring)
-
-##  Timeline
 To build,
 ```bash
 ./bin/build-all.sh
 ```
 
-To run, execute following command,
+The timeline production procedure is outlined in the following steps:
 
+## 1. `clas12_monitoring`
+To submit `clas12_monitoring` for each run from specified directory one should run these commands, e.g.:
+```bash
+./bin/run-monitoring.sh   # print usage guide
+```
+
+To run it interactively, see the [monitoring subdirectory](monitoring)
+
+## 2. Detector Timelines
+To run, execute following command,
 ```bash
 ./bin/run-detectors.sh "run group" "cooking version" "/path/to/monitoring/files/""
 ```
@@ -31,9 +32,7 @@ with the adequate arguments, e.g.,
 ./bin/run-detectors.sh rgb pass0v25.18 /volatile/clas12/rg-b/offline_monitoring/pass0/v25.18/
 ```
 
-
-## Calibration QA
-
+## 3. Detector QA
 To run,
 ```bash
 ./bin/run-qa.sh TIMELINE
@@ -50,12 +49,16 @@ https://clas12mon.jlab.org/rga/pass1/version3_qa/tlsummary
 
 See [further details](qa-detectors/README.md) for more information.
 
-## Physics QA and QADB
+# Physics QA and QADB
+The physics QA is typically performed only on a fully cooked dataset, whereas the above detector timeline production
+is produced on much smaller data subsets. The physics QA timeline production is thus separate from the
+detector timeline production.
 
-See [documentation here](qa-physics).
+See [its documentation here](qa-physics) for more details.
 
 
 # Flowchart
+Here is a flowchart illustrating the data and steps for timeline production:
 
 ```mermaid
 flowchart TB
