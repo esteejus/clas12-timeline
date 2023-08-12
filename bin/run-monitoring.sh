@@ -14,105 +14,122 @@ SLURM_MEMORY=1500
 SLURM_TIME=4:00:00
 ########################################################################
 
-
+# default options
+ver=test
+outputDir=plots
+modeRundir=0
+modeSingle=0
+modeSeries=0
+modeSubmit=0
 
 # usage
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
   echo """
-  USAGE: $0 [VERSION_NAME] [OPTIONS]... [RUN_DIRECTORY]...
+  USAGE: $0  [OPTIONS]...  [RUN_DIRECTORY]...
          runs the monitoring jobs, either on the farm or locally
 
-    [VERSION_NAME]       REQUIRED: version name, defined by the user, used for
-                         slurm jobs identification
+  REQUIRED ARGUMENTS:
 
-    [OPTIONS]...         OPTIONAL: optional keywords to change settings
-                         - if you specify none, the default will generate a
-                           slurm job script, one job per specified
-                           [RUN_DIRECTORY], and a printout of the corrsponding
-                           \`sbatch\` command for user execution
-                         - any number of the following keywords may be used:
-
-                         rundir    assume the specified [RUN_DIRECTORY] contains
-                                   subdirectories named as just run numbers; jobs
-                                   will be created for each of them; it is not
-                                   recommended to use wildcards for this option
-
-                         single    run only the first job, locally; useful for
-                                   testing before submitting jobs to slurm
-
-                         series    run all jobs locally, one at a time; useful
-                                   for testing on systems without slurm
-
-                         submit    submit the slurm jobs, rather than just
-                                   printing the \`sbatch\` command
-
-
-    [RUN_DIRECTORY]...   REQUIRED: One or more directories, each directory corresponds to
+    [RUN_DIRECTORY]...   One or more directories, each directory corresponds to
                          one run and should contain reconstructed hipo files.
                          - A regexp can be used to specify the list of directories as well,
                            if your shell supports it
                          - Globbing may also be used, if your shell supports it (e.g. * wildcard)
-                         - For each [RUN_DIRECTORY] the directory plots[RUNNUM] is created in the working
-                           directory. Each 'plots[RUNNUM]' directory contains hipo files with monitoring
-                           histograms.
+                         - For each [RUN_DIRECTORY] the directory plots[RUNNUM] is created in the
+                           output directory (by default, in $outputDir/). Each 'plots[RUNNUM]'
+                           directory contains hipo files with monitoring histograms
+
+  OPTIONS:
+
+    -v [VERSION_NAME]      version name, defined by the user, used for
+                           slurm jobs identification
+                           default = $ver
+
+    -o [OUTPUT_DIRECTORY]  output directory
+                           default = $outputDir
+
+   By default, $0 will generate a slurm job script, one job per specified [RUN_DIRECTORY], and a
+   printout of the corrsponding \`sbatch\` command for user execution; use any number of the 
+   following options to change this behavior:
+
+    --rundir    assume the specified [RUN_DIRECTORY] contains
+                subdirectories named as just run numbers; jobs
+                will be created for each of them; it is not
+                recommended to use wildcards for this option
+
+    --single    run only the first job, locally; useful for
+                testing before submitting jobs to slurm
+
+    --series    run all jobs locally, one at a time; useful
+                for testing on systems without slurm
+
+    --submit    submit the slurm jobs, rather than just
+                printing the \`sbatch\` command
 
   EXAMPLES:
 
-  $  $0 v1.0.0 submit rundir /volatile/mon
+  $  $0 -v v1.0.0 --submit --rundir /volatile/mon
        -> submit slurm jobs for all numerical subdirectories of /volatile/mon/,
           where each subdirectory should be a run number; this is the most common usage
 
-  $  $0 v1.0.0 /volatile/mon/*
+  $  $0 -v v1.0.0 /volatile/mon/*
        -> generate the slurm script to run on all subdirectories of
           /volatile/mon/ no matter their name
 
-  $  $0 v1.0.0 single /volatile/mon/run*
+  $  $0 -v v1.0.0 --single /volatile/mon/run*
        -> run on the first directory named run[RUNNUM], where [RUNNUM] is a run number
 
   """ >&2
   exit 101
 fi
 
-# get version number
-ver=$1
-shift
-
-# get options
-modeRundir=0
-modeSingle=0
-modeSeries=0
-modeSubmit=0
-while [ 1 ]; do
-  case $1 in
-    rundir) modeRundir=1; shift ;;
-    single) modeSingle=1; shift ;;
-    series) modeSeries=1; shift ;;
-    submit) modeSubmit=1; shift ;;
-    *) break ;;
+# parse options
+while getopts "v:o:-:" opt; do
+  case $opt in
+    v) ver=$OPTARG;;
+    o) outputDir=$OPTARG;;
+    -)
+      case $OPTARG in
+        rundir) modeRundir=1;;
+        single) modeSingle=1;;
+        series) modeSeries=1;;
+        submit) modeSubmit=1;;
+        *) echo "ERROR: unknown option --$OPTARG" >&2 && exit 100;;
+      esac
+      ;;
+    *) echo "ERROR: unknown option -$opt" >&2 && exit 100;;
   esac
 done
+shift $((OPTIND - 1))
 
-# get run directories
-if [ $# -eq 0 ]; then
-  echo "ERROR: no run directories specified" >&2
-  exit 100
-fi
+
+# parse input directories
 rdirs=""
+[ $# == 0 ] && echo "ERROR: no run directories specified" >&2 && exit 100
 if [ $modeRundir -eq 1 ]; then
   for topdir in $*; do
-    for subdir in $(ls $topdir | grep -E "[0-9]+"); do
-      rdirs+=$(echo "$topdir/$subdir " | sed 's;//;/;g')
-    done
+    if [ -d $topdir -o -L $topdir ]; then
+      for subdir in $(ls $topdir | grep -E "[0-9]+"); do
+        rdirs+=$(echo "$topdir/$subdir " | sed 's;//;/;g')
+      done
+    else
+      echo "ERROR: run directory '$topdir' does not exist"
+      exit 100
+    fi
   done
 else
   rdirs=$*
 fi
+for rdir in $rdirs; do
+  [[ "$rdir" =~ ^- ]] && echo "ERROR: option '$rdir' must be specified before run directories" >&2 && exit 100
+done
 
 # print arguments
 echo """
 Settings:
 ========================
-VERSION_NAME = $ver
+VERSION_NAME     = $ver
+OUTPUT_DIRECTORY = $outputDir
 OPTIONS = {
   rundir => $modeRundir,
   single => $modeSingle,
@@ -137,7 +154,7 @@ slurmJobName=clas12-timeline-monitoring-$ver
 echo "---- slurm job name will be: $slurmJobName"
 
 # make output directories
-mkdir -p log plots slurm
+mkdir -p log $outputDir slurm
 
 # loop over input directories, building the job list
 joblist=slurm/job.${ver}.list
@@ -154,7 +171,7 @@ for rdir in $rdirs; do
   runnum=$((10#$runnum))
 
   # if output directory exists, skip this run
-  plotDir=plots/plots$runnum
+  plotDir=$outputDir/plots$runnum
   [[ -d $plotDir ]] && echo "------ [WARNING] skipping run $runnum because the directory $plotDir already exists" >&2 && continue
 
   # get the beam energy
@@ -178,9 +195,9 @@ for r0,r1,eb in beamlist:
   echo "------ generating $EXE command"
   cmd="""
 echo \"RUN $runnum\" &&
-realpath $rdir/* > plots/$runnum.input &&
+realpath $rdir/* > $outputDir/$runnum.input &&
 mkdir -p $plotDir &&
-pushd plots &&
+pushd $outputDir &&
 java -DCLAS12DIR=\${COATJAVA}/ -Xmx1024m -cp \${COATJAVA}/lib/clas/*:\${COATJAVA}/lib/utils/*:$JARPATH $EXE $runnum $runnum.input $MAX_NUM_EVENTS $beam_energy;
 popd"""
   echo $cmd >> $joblist
