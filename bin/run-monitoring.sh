@@ -17,6 +17,7 @@ SLURM_TIME=4:00:00
 # default options
 ver=test
 outputDir=plots
+modeFindhipo=0
 modeRundir=0
 modeSingle=0
 modeSeries=0
@@ -31,40 +32,44 @@ if [ $# -lt 1 ]; then
   REQUIRED ARGUMENTS:
 
     [RUN_DIRECTORY]...   One or more directories, each directory corresponds to
-                         one run and should contain reconstructed hipo files.
-                         - A regexp can be used to specify the list of directories as well,
-                           if your shell supports it
-                         - Globbing may also be used, if your shell supports it (e.g. * wildcard)
-                         - For each [RUN_DIRECTORY] the directory plots[RUNNUM] is created in the
-                           output directory (by default, in $outputDir/). Each 'plots[RUNNUM]'
-                           directory contains hipo files with monitoring histograms
+                         one run and should contain reconstructed hipo files
+                         - See \"input finding\" options below for more control,
+                           so that you don't have to specify each run's directory
+                         - A regexp or globbing (wildcards) can be used to
+                           specify the list of directories as well, if your shell
+                           supports it
 
   OPTIONS:
 
-    -v [VERSION_NAME]      version name, defined by the user, used for
-                           slurm jobs identification
-                           default = $ver
+     -v [VERSION_NAME]      version name, defined by the user, used for
+                            slurm jobs identification
+                            default = $ver
 
-    -o [OUTPUT_DIRECTORY]  output directory
-                           default = $outputDir
+     -o [OUTPUT_DIRECTORY]  output directory
+                            default = $outputDir
 
-   By default, $0 will generate a slurm job script, one job per specified [RUN_DIRECTORY], and a
-   printout of the corrsponding \`sbatch\` command for user execution; use any number of the 
-   following options to change this behavior:
+     *** Input finding options: choose only one, or the default will assume each specified
+         [RUN_DIRECTORY] is a single run's directory full of HIPO files
 
-    --rundir    assume the specified [RUN_DIRECTORY] contains
-                subdirectories named as just run numbers; jobs
-                will be created for each of them; it is not
-                recommended to use wildcards for this option
+       --findhipo  use \`find\` to find all HIPO files in each
+                   [RUN_DIRECTORY]; this is useful if you have a
+                   directory tree, e.g., runs grouped by target
 
-    --single    run only the first job, locally; useful for
-                testing before submitting jobs to slurm
+       --rundir    assume each specified [RUN_DIRECTORY] contains
+                   subdirectories named as just run numbers; it is not
+                   recommended to use wildcards for this option
 
-    --series    run all jobs locally, one at a time; useful
-                for testing on systems without slurm
+     *** Execution control options: choose only one, or the default will generate a
+         Slurm job description and print out the suggested \`sbatch\` command
 
-    --submit    submit the slurm jobs, rather than just
-                printing the \`sbatch\` command
+       --single    run only the first job, locally; useful for
+                   testing before submitting jobs to slurm
+
+       --series    run all jobs locally, one at a time; useful
+                   for testing on systems without slurm
+
+       --submit    submit the slurm jobs, rather than just
+                   printing the \`sbatch\` command
 
   EXAMPLES:
 
@@ -90,6 +95,7 @@ while getopts "v:o:-:" opt; do
     o) outputDir=$OPTARG;;
     -)
       case $OPTARG in
+        findhipo) modeFindhipo=1;;
         rundir) modeRundir=1;;
         single) modeSingle=1;;
         series) modeSeries=1;;
@@ -104,23 +110,32 @@ shift $((OPTIND - 1))
 
 
 # parse input directories
-rdirs=""
+rdirs=()
 [ $# == 0 ] && echo "ERROR: no run directories specified" >&2 && exit 100
-if [ $modeRundir -eq 1 ]; then
+if [ $modeFindhipo -eq 1 ]; then
+  for topdir in $*; do
+    fileList=$(find -L $topdir -type f -name "*.hipo")
+    if [ -z "$fileList" ]; then
+      echo "WARNING: run directory '$topdir' has no HIPO files" >&2
+    else
+      rdirs+=($(echo $fileList | xargs dirname | sort | uniq))
+    fi
+  done
+elif [ $modeRundir -eq 1 ]; then
   for topdir in $*; do
     if [ -d $topdir -o -L $topdir ]; then
       for subdir in $(ls $topdir | grep -E "[0-9]+"); do
-        rdirs+=$(echo "$topdir/$subdir " | sed 's;//;/;g')
+        rdirs+=($(echo "$topdir/$subdir " | sed 's;//;/;g'))
       done
     else
-      echo "ERROR: run directory '$topdir' does not exist"
+      echo "ERROR: run directory '$topdir' does not exist" >&2
       exit 100
     fi
   done
 else
-  rdirs=$*
+  rdirs=$@
 fi
-for rdir in $rdirs; do
+for rdir in ${rdirs[@]}; do
   [[ "$rdir" =~ ^- ]] && echo "ERROR: option '$rdir' must be specified before run directories" >&2 && exit 100
 done
 
@@ -131,13 +146,14 @@ Settings:
 VERSION_NAME     = $ver
 OUTPUT_DIRECTORY = $outputDir
 OPTIONS = {
-  rundir => $modeRundir,
-  single => $modeSingle,
-  series => $modeSeries,
-  submit => $modeSubmit,
+  findhipo => $modeFindhipo,
+  rundir   => $modeRundir,
+  single   => $modeSingle,
+  series   => $modeSeries,
+  submit   => $modeSubmit,
 }
 RUN_DIRECTORIES = ["""
-for rdir in $rdirs; do
+for rdir in ${rdirs[@]}; do
   echo "  $rdir,"
 done
 echo """]
@@ -159,7 +175,7 @@ mkdir -p log $outputDir slurm
 # loop over input directories, building the job list
 joblist=slurm/job.${ver}.list
 > $joblist
-for rdir in $rdirs; do
+for rdir in ${rdirs[@]}; do
 
   # check for existence of directory
   echo "---- READ directory $rdir"
