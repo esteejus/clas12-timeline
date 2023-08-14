@@ -63,7 +63,7 @@ See [its documentation here](qa-physics) for more details.
 Here is a flowchart illustrating the data and steps for timeline production:
 
 ```mermaid
-flowchart TB
+flowchart LR 
 
     classDef script   fill:#8f8,color:black
     classDef data     fill:#ff8,color:black
@@ -71,20 +71,35 @@ flowchart TB
     classDef timeline fill:#8ff,color:black
 
     dst[(DST Files)]:::data
-    runMonitoring[bin/run-monitoring.sh<br/><strong>slurm</strong>]:::script
-    outMonitoring([plots/plotsRUNNUM/*.hipo]):::misc
-    runDetectors[bin/run-detectors.sh]:::script
-    outDetectors{{detector timelines}}:::timeline
-    runDetectorsQA[bin/run-qa.sh]:::script
-    outDetectorsQA{{detector timelines with QA}}:::timeline
 
-    qaPhysics[[qa-physics<br/><strong>slurm</strong>]]:::script
-    qadbTimelines{{physics QA timelines}}:::timeline
-    qadb([QADB]):::misc
+    subgraph Data Monitoring
+        subgraph "<strong>bin/run-monitoring.sh</strong>"
+            monitoring["monitoring/"]:::script
+            qaPhysics["qa-physics/"]:::script
+        end
+    end
 
-    webTimelines{{timelines on webserver}}:::timeline
+    subgraph Timeline Production
+        subgraph "<strong>bin/run-detector-timelines.sh</strong>"
+            detectors["detectors/"]:::script
+            qaDetectors["qa-detectors/"]:::script
+        end
+        subgraph "<strong>bin/run-physics-timelines.sh</strong>"
+            qaPhysics2["qa-physics/"]:::script
+        end
+    end
 
-    dst --> runMonitoring --> outMonitoring --> runDetectors --> outDetectors --> runDetectorsQA --> outDetectorsQA --> webTimelines
-    dst --> qaPhysics --> qadbTimelines --> webTimelines
-    qaPhysics --> qadb
+    subgraph QADB Production
+        qadb([QADB]):::misc
+        manualQA[manual physics QA]:::script
+    end
+    
+    timelines{{timelines}}:::timeline
+
+    dst --> monitoring --> detectors --> qaDetectors --> timelines
+    dst --> qaPhysics --> qaPhysics2 --> timelines
+    qaPhysics2 --> qadb
+
+    manualQA <-.-> timelines
+    manualQA <-.-> qadb
 ```
