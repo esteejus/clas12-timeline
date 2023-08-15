@@ -29,4 +29,4 @@ rgf_summer20_torusM1 12447 12951 /cache/clas12/rg-f/production/recon/summer2020/
 rgf_2020 12210 12951 /w/hallb-scifs17exp/clas12/users/dilks/dm/data.RGF
 
 # RGM
-rgm_fall2021 15024 15884 /volatile/clas12/rg-m/pass0.18/mon/recon
+rgm_fall2021 15019 15884 /cache/clas12/rg-m/production/pass1/allData_forTimelines/
